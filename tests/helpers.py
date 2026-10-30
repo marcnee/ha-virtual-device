@@ -74,8 +74,19 @@ async def source_form(
     return await submit(hass, result["flow_id"], basics)
 
 
+async def skip_details(hass: HomeAssistant, result: FlowResult) -> FlowResult:
+    """Submit the form with the settings of the entity type without changing anything."""
+    assert result["step_id"] == "entity_details"
+    return await submit(hass, result["flow_id"], {})
+
+
 async def save(hass: HomeAssistant, result: FlowResult) -> None:
-    """Choose "save" in the menu and check that the device was saved."""
+    """Choose "save" in the menu and check that the device was saved.
+
+    A form with the settings of the entity type that is still open is submitted unchanged first.
+    """
+    if result["step_id"] == "entity_details":
+        result = await skip_details(hass, result)
     result = await choose(hass, result["flow_id"], "save")
     assert result["type"] is FlowResultType.ABORT
     assert result["reason"] == "reconfigure_successful"

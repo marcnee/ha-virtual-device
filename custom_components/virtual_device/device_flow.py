@@ -66,7 +66,11 @@ from .const import (
     COPY_SELECTED,
     PLATFORMS,
 )
-from .device_classes import SENSOR_DEVICE_CLASSES, SENSOR_STATE_CLASSES
+from .device_classes import (
+    BINARY_SENSOR_DEVICE_CLASSES,
+    SENSOR_DEVICE_CLASSES,
+    SENSOR_STATE_CLASSES,
+)
 from .forwarding import forwarding_actions
 from .source_defaults import defaults_from_source
 
@@ -99,8 +103,8 @@ def _action_field(draft: dict[str, Any], key: str) -> dict[Any, Any]:
     return {vol.Optional(key, description=_suggest(draft, key)): ActionSelector()}
 
 
-def _details_schema(platform: str, draft: dict[str, Any]) -> vol.Schema | None:
-    """Platform specific fields, or None if the platform has none."""
+def _details_schema(platform: str, draft: dict[str, Any]) -> vol.Schema:
+    """The fields that are specific to the type of the entity."""
     fields: dict[Any, Any]
     match platform:
         case Platform.SENSOR:
@@ -112,6 +116,12 @@ def _details_schema(platform: str, draft: dict[str, Any]) -> vol.Schema | None:
                 vol.Optional(
                     CONF_STATE_CLASS, description=_suggest(draft, CONF_STATE_CLASS)
                 ): _dropdown(SENSOR_STATE_CLASSES),
+            }
+        case Platform.BINARY_SENSOR:
+            fields = {
+                vol.Optional(
+                    CONF_DEVICE_CLASS, description=_suggest(draft, CONF_DEVICE_CLASS)
+                ): _dropdown(BINARY_SENSOR_DEVICE_CLASSES)
             }
         case Platform.SWITCH:
             fields = _action_field(draft, CONF_ACTION_ON) | _action_field(draft, CONF_ACTION_OFF)
@@ -132,7 +142,7 @@ def _details_schema(platform: str, draft: dict[str, Any]) -> vol.Schema | None:
         case Platform.BUTTON:
             fields = _action_field(draft, CONF_ACTION_PRESS)
         case _:
-            return None
+            raise ValueError(f"Unknown platform {platform}")
     return vol.Schema(fields)
 
 
@@ -505,10 +515,7 @@ class VirtualDeviceSubentryFlow(ConfigSubentryFlow):
         )
 
     async def _next_after_source(self) -> SubentryFlowResult:
-        if _details_schema(self._draft[CONF_PLATFORM], self._draft) is not None:
-            return await self.async_step_entity_details()
-        self._commit_draft()
-        return await self.async_step_init()
+        return await self.async_step_entity_details()
 
     async def async_step_entity_details(
         self, user_input: dict[str, Any] | None = None
@@ -518,7 +525,6 @@ class VirtualDeviceSubentryFlow(ConfigSubentryFlow):
         if user_input is None and self._adding:
             self._suggest_from_source(platform)
         schema = _details_schema(platform, self._draft)
-        assert schema is not None
         errors: dict[str, str] = {}
         if user_input is not None:
             errors = _validate_details(platform, user_input)
@@ -533,7 +539,6 @@ class VirtualDeviceSubentryFlow(ConfigSubentryFlow):
     def _suggest_from_source(self, platform: str) -> None:
         """Fill details the user has not set yet: settings and forwarding actions of the source."""
         schema = _details_schema(platform, self._draft)
-        assert schema is not None
         wanted = {str(key) for key in schema.schema}
         source = self.hass.states.get(self._draft.get(CONF_SOURCE_ENTITY, ""))
         for key, value in (

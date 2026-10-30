@@ -14,7 +14,7 @@ from custom_components.virtual_device.const import (
 )
 
 from .conftest import SetupDevice
-from .helpers import choose, reconfigure, saved_entities, submit, suggested
+from .helpers import choose, reconfigure, saved_entities, skip_details, submit, suggested
 
 SOURCE = "sensor.heatpump_status"
 STATUS = {
@@ -46,6 +46,7 @@ async def test_icon_is_set_in_the_basics_form(
         {CONF_PLATFORM: "binary_sensor", CONF_NAME: "Running", CONF_ICON: "mdi:fan"},
     )
     result = await submit(hass, result["flow_id"], {CONF_SOURCE_ENTITY: SOURCE})
+    result = await skip_details(hass, result)
     result = await choose(hass, result["flow_id"], "save")
 
     assert saved_entities(entry)[0] == {
@@ -69,6 +70,7 @@ async def test_icon_can_be_edited_and_removed(
     changes: dict[str, Any] = {CONF_PLATFORM: "binary_sensor", CONF_NAME: "Status"}
     result = await submit(hass, result["flow_id"], changes)
     result = await submit(hass, result["flow_id"], {CONF_SOURCE_ENTITY: SOURCE})
+    result = await skip_details(hass, result)
     result = await choose(hass, result["flow_id"], "save")
 
     assert CONF_ICON not in saved_entities(entry)[0]

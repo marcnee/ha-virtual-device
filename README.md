@@ -67,7 +67,7 @@ restarted (briefly unavailable, same entity ID), all other entities and devices 
 | Type | Shows | Commands |
 |---|---|---|
 | Sensor | Text or value of the source, optional unit and classes | none |
-| Binary sensor | on/off derived from the source | none |
+| Binary sensor | on/off derived from the source, optional device class (door, motion, ...) | none |
 | Switch | on/off derived from the source | actions for turn on / turn off |
 | Number | Number with min, max, step and unit | action with `{{ value }}` |
 | Select | One of your options | action with `{{ option }}` |

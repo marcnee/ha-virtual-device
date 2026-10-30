@@ -140,3 +140,8 @@ def test_source_missing_issue_texts() -> None:
 def test_source_missing_texts_use_only_the_placeholders_of_the_issue() -> None:
     used = {name for text in _texts(ISSUE) for name in re.findall(r"\{(\w+)\}", text)}
     assert used <= {"device", "entity", "source"}
+
+
+def test_the_device_class_text_covers_binary_sensors() -> None:
+    text = DEVICE["step"]["entity_details"]["data_description"]["device_class"]
+    assert "binary" in text.lower()

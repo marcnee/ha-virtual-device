@@ -7,6 +7,8 @@ Changes that need action from users go under `### Breaking` at the top of their 
 ## [Unreleased]
 
 ### Added
+- Binary sensors can have a device class (door, motion, ...), suggested from the source. Binary
+  sensors you already have stay as they are; adding or editing one shows a new *Details* form.
 - A repair issue appears when the source of a virtual entity does not exist (deleted or removed),
   not when it is only unavailable. Choose a new source right in the issue; nothing else of the
   entity changes. The issue goes away when the source returns. Nothing is checked while Home

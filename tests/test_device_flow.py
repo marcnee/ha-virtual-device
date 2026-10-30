@@ -29,7 +29,7 @@ from custom_components.virtual_device.const import (
 )
 
 from .conftest import SetupDevice
-from .helpers import choose, reconfigure, saved_entities, submit, suggested
+from .helpers import choose, reconfigure, saved_entities, skip_details, submit, suggested
 
 SOURCE = "sensor.heatpump_status"
 STRIP_CODE = "{{ value.split(' - ', 1)[-1] }}"
@@ -210,6 +210,7 @@ async def test_changing_the_platform_keeps_the_source_settings(
     result = await submit(
         hass, result["flow_id"], {CONF_SOURCE_ENTITY: SOURCE, CONF_VALUE_TEMPLATE: STRIP_CODE}
     )
+    result = await skip_details(hass, result)
     result = await choose(hass, result["flow_id"], "save")
 
     assert saved_entities(entry)[0][CONF_PLATFORM] == "binary_sensor"

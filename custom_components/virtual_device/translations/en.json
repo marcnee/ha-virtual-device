@@ -80,7 +80,7 @@
           "data_description": {
             "options": "The value (after the template) must match one option exactly.",
             "unit_of_measurement": "Optional. If a unit or class is set, the value must be numeric.",
-            "device_class": "Optional. Only for numeric sensors.",
+            "device_class": "Optional. Sensors: only for numeric values. Binary sensors: sets the icon and wording of the states, for example door (open/closed).",
             "state_class": "Optional. Use measurement for values that go up and down."
           }
         },

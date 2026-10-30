@@ -24,7 +24,7 @@ from custom_components.virtual_device.const import (
 from custom_components.virtual_device.forwarding import forwarding_actions
 
 from .conftest import SetupDevice
-from .helpers import choose, reconfigure, saved_entities, submit, suggested
+from .helpers import choose, reconfigure, saved_entities, skip_details, submit, suggested
 
 TARGET = "number.heatpump_target"
 TARGET_STATE = {
@@ -128,6 +128,7 @@ async def test_add_from_source_keeps_the_template(
     result = await submit(
         hass, result["flow_id"], {CONF_PLATFORM: "binary_sensor", CONF_NAME: "On"}
     )
+    result = await skip_details(hass, result)
     result = await choose(hass, result["flow_id"], "save")
 
     assert saved_entities(entry)[0][CONF_VALUE_TEMPLATE] == template
@@ -238,3 +239,39 @@ async def test_no_actions_are_suggested_for_other_types(
     result = await submit(hass, result["flow_id"], {CONF_PLATFORM: "sensor", CONF_NAME: "Pump"})
 
     assert suggested(result) == {}
+
+
+async def test_a_binary_sensor_offers_its_device_class_prefilled_from_the_source(
+    hass: HomeAssistant, setup_device: SetupDevice
+) -> None:
+    hass.states.async_set("binary_sensor.door", "off", {"device_class": "door"})
+    entry = await setup_device([])
+    result = await start(hass, entry, "add_from_source")
+    result = await submit(hass, result["flow_id"], {CONF_SOURCE_ENTITY: "binary_sensor.door"})
+
+    result = await submit(
+        hass, result["flow_id"], {CONF_PLATFORM: "binary_sensor", CONF_NAME: "Door"}
+    )
+
+    assert result["step_id"] == "entity_details"
+    assert suggested(result) == {CONF_DEVICE_CLASS: "door"}
+    result = await submit(hass, result["flow_id"], {CONF_DEVICE_CLASS: "door"})
+    result = await choose(hass, result["flow_id"], "save")
+    assert saved_entities(entry)[0][CONF_DEVICE_CLASS] == "door"
+
+
+async def test_a_binary_sensor_can_be_saved_without_a_device_class(
+    hass: HomeAssistant, setup_device: SetupDevice
+) -> None:
+    hass.states.async_set("binary_sensor.door", "off")
+    entry = await setup_device([])
+    result = await start(hass, entry, "add_from_source")
+    result = await submit(hass, result["flow_id"], {CONF_SOURCE_ENTITY: "binary_sensor.door"})
+    result = await submit(
+        hass, result["flow_id"], {CONF_PLATFORM: "binary_sensor", CONF_NAME: "Door"}
+    )
+
+    result = await submit(hass, result["flow_id"], {})
+    result = await choose(hass, result["flow_id"], "save")
+
+    assert CONF_DEVICE_CLASS not in saved_entities(entry)[0]
