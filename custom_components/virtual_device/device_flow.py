@@ -66,8 +66,8 @@ from .const import (
     COPY_SELECTED,
     PLATFORMS,
 )
+from .device_classes import SENSOR_DEVICE_CLASSES, SENSOR_STATE_CLASSES
 from .forwarding import forwarding_actions
-from .sensor_classes import SENSOR_DEVICE_CLASSES, SENSOR_STATE_CLASSES
 from .source_defaults import defaults_from_source
 
 # Fields kept when the platform of an entity is changed while editing.

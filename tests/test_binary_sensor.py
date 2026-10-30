@@ -5,6 +5,7 @@ from homeassistant.const import STATE_OFF, STATE_ON, STATE_UNAVAILABLE, STATE_UN
 from homeassistant.core import HomeAssistant
 
 from custom_components.virtual_device.const import (
+    CONF_DEVICE_CLASS,
     CONF_ID,
     CONF_NAME,
     CONF_PLATFORM,
@@ -73,3 +74,23 @@ async def test_binary_sensor_unknown_and_unavailable(
     hass.states.async_set(SOURCE, STATE_UNAVAILABLE)
     await hass.async_block_till_done()
     assert hass.states.get(ENTITY_ID).state == STATE_UNAVAILABLE
+
+
+async def test_binary_sensor_has_the_configured_device_class(
+    hass: HomeAssistant, setup_device: SetupDevice
+) -> None:
+    hass.states.async_set(SOURCE, "on")
+
+    await setup_device([running(**{CONF_DEVICE_CLASS: "door"})])
+
+    assert hass.states.get(ENTITY_ID).attributes["device_class"] == "door"
+
+
+async def test_binary_sensor_without_device_class_has_none(
+    hass: HomeAssistant, setup_device: SetupDevice
+) -> None:
+    hass.states.async_set(SOURCE, "on")
+
+    await setup_device([running()])
+
+    assert "device_class" not in hass.states.get(ENTITY_ID).attributes

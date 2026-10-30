@@ -18,7 +18,7 @@ from .const import (
     CONF_STEP,
     CONF_UNIT,
 )
-from .sensor_classes import SENSOR_DEVICE_CLASSES, SENSOR_STATE_CLASSES
+from .device_classes import SENSOR_DEVICE_CLASSES, SENSOR_STATE_CLASSES
 
 _PLATFORM_BY_DOMAIN = {
     "number": Platform.NUMBER,
