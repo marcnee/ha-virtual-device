@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
@@ -26,5 +28,5 @@ class VirtualSensor(VirtualEntity, SensorEntity):
     """A sensor showing the state of a source entity."""
 
     @callback
-    def _apply(self, value: str | None) -> None:
+    def _apply(self, value: Any | None) -> None:
         self._attr_native_value = value

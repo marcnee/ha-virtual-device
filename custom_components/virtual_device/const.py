@@ -14,3 +14,5 @@ CONF_NAME = "name"
 CONF_SOURCE_ENTITY = "source_entity"
 
 PLATFORMS = [Platform.SENSOR]
+CONF_SOURCE_ATTRIBUTE = "source_attribute"
+CONF_VALUE_TEMPLATE = "value_template"
