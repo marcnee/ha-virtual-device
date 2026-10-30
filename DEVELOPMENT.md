@@ -135,4 +135,14 @@ pip install pytest-homeassistant-custom-component      # newest release; add --p
 python -m pytest
 ```
 
-Hassfest (manifest and translation checks) only exists as a GitHub action; it runs on every push.
+## Hassfest
+
+Home Assistant's own checks of `manifest.json` and the translations. The GitHub action only starts
+a Docker image with the repository mounted, so the same check runs locally:
+
+```sh
+docker compose run --rm hassfest
+```
+
+It also runs on every push and weekly on GitHub. The image is not pinned, like in the action, so it
+follows the newest Home Assistant checks.

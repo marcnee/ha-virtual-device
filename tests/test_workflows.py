@@ -44,3 +44,10 @@ def test_the_compat_image_installs_the_unpinned_package() -> None:
         COMPAT_DOCKERFILE
     )
     assert "requirements_test.txt" not in COMPAT_DOCKERFILE
+
+
+def test_compose_runs_hassfest_like_the_github_action() -> None:
+    """The action starts this image with the repository mounted at /github/workspace."""
+    hassfest = COMPOSE["hassfest"]
+    assert hassfest["image"] == "ghcr.io/home-assistant/hassfest"
+    assert hassfest["volumes"] == [".:/github/workspace"]

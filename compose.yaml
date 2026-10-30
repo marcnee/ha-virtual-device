@@ -25,6 +25,13 @@ services:
     volumes:
       - .:/app
 
+  # Home Assistant's own checks of manifest.json and translations, the same image the GitHub
+  # action hassfest runs: docker compose run --rm hassfest
+  hassfest:
+    image: ghcr.io/home-assistant/hassfest
+    volumes:
+      - .:/github/workspace
+
   # docker compose run --rm lint
   lint:
     build:
