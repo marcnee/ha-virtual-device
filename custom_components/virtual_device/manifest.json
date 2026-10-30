@@ -1,8 +1,8 @@
 {
   "domain": "virtual_device",
   "name": "Virtual Device",
-  "codeowners": ["@marcnee"],
   "after_dependencies": ["logbook"],
+  "codeowners": ["@marcnee"],
   "config_flow": true,
   "documentation": "https://github.com/marcnee/ha-virtual-device",
   "integration_type": "service",
