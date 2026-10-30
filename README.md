@@ -41,7 +41,7 @@ entities are deleted from the entity registry. You can create as many virtual de
 | Select | One of your options | action with `{{ option }}` |
 | Button | Nothing | action when pressed (no source needed) |
 
-A virtual entity is *unavailable* while its source is unavailable, and *unknown* while the source
+Every entity can have its own icon. A virtual entity is *unavailable* while its source is unavailable, and *unknown* while the source
 is unknown, has no such attribute or the template fails or returns nothing.
 
 Binary sensors and switches treat the (transformed) value `on`, `true`, `1` and `yes` as on and
