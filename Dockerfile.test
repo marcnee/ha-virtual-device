@@ -1,0 +1,6 @@
+# Test image: same Python and Home Assistant version as CI.
+FROM python:3.14-slim
+WORKDIR /app
+COPY requirements_test.txt .
+RUN pip install --no-cache-dir -r requirements_test.txt
+ENTRYPOINT ["python", "-m", "pytest"]

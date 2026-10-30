@@ -1,0 +1,28 @@
+services:
+  # docker compose run --rm test [pytest options]
+  test:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    volumes:
+      - .:/app
+
+  # docker compose run --rm lint
+  lint:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    entrypoint: ["sh", "-c", "ruff check . && ruff format --check ."]
+    volumes:
+      - .:/app
+
+  # docker compose --profile dev up homeassistant   ->  http://localhost:8123
+  homeassistant:
+    profiles: ["dev"]
+    image: ghcr.io/home-assistant/home-assistant:2026.10.4
+    ports:
+      - "8123:8123"
+    volumes:
+      - ./dev/config:/config
+      - ./custom_components/virtual_device:/config/custom_components/virtual_device
+    restart: unless-stopped
