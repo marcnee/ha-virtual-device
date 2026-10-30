@@ -9,7 +9,7 @@ from homeassistant.config_entries import (
     ConfigSubentry,
 )
 from homeassistant.core import HomeAssistant
-from homeassistant.data_entry_flow import FlowResult
+from homeassistant.data_entry_flow import FlowResult, FlowResultType
 
 from custom_components.virtual_device.const import CONF_ENTITIES, SUBENTRY_TYPE_DEVICE
 
@@ -63,3 +63,19 @@ def suggested(result: FlowResult) -> dict[str, Any]:
         elif callable(key.default):
             values[str(key)] = key.default()
     return {k: v for k, v in values.items() if v is not None}
+
+
+async def source_form(
+    hass: HomeAssistant, entry: ConfigEntry, basics: dict[str, Any]
+) -> FlowResult:
+    """Walk through "add entity" up to the source form."""
+    result = await reconfigure(hass, entry)
+    result = await choose(hass, result["flow_id"], "add_entity")
+    return await submit(hass, result["flow_id"], basics)
+
+
+async def save(hass: HomeAssistant, result: FlowResult) -> None:
+    """Choose "save" in the menu and check that the device was saved."""
+    result = await choose(hass, result["flow_id"], "save")
+    assert result["type"] is FlowResultType.ABORT
+    assert result["reason"] == "reconfigure_successful"

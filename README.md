@@ -76,7 +76,7 @@ are prefilled with an action that passes the command on to the source: `homeassi
 `turn_off` for `switch`, `input_boolean`, `light` and `fan`; `number.set_value` /
 `input_number.set_value` for numbers; `select.select_option` / `input_select.select_option` for
 selects. The suggestion is only made when adding, never when editing, and you can change or clear
-it. For any other source write the action yourself:
+it. For any other source write the action yourself (see below).
 
 Actions are normal Home Assistant actions, as in scripts. Their templates can use `source_entity`,
 `source_state` and, depending on the type, `value` (number) or `option` (select).
@@ -123,6 +123,19 @@ attributes (enter their names). Copied attributes follow the source. Attributes 
 sets itself (`friendly_name`, `icon`, `unit_of_measurement`, `device_class`, `state_class`,
 `entity_picture`, `supported_features`, `options`, `min`, `max`, `step`, `mode`) and the three
 attributes above are never copied.
+
+**Attribute templates** compute or rename attributes. In the source form enter YAML with one
+attribute name and one template per line:
+
+```yaml
+fehlercode: "{{ attributes.error_code | int }}"
+status_text: "{{ value.split(' - ', 1)[-1] }}"
+```
+
+The templates see `value` (state or chosen attribute), `state` and `attributes`, like the value
+template. Numbers stay numbers. A template overrides a copied attribute of the same name; one that
+renders `none` or fails (it is logged) only leaves out its attribute. The reserved names above
+cannot be used.
 
 ## Limitations (see ROADMAP.md)
 

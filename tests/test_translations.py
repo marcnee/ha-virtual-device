@@ -17,6 +17,7 @@ SOURCE_FIELDS = [
     "value_template",
     "copy_attributes",
     "attribute_names",
+    "attribute_templates",
 ]
 OPTION_FIELDS = {
     "add_from_source": SOURCE_FIELDS,
@@ -79,9 +80,14 @@ def test_device_step_texts(step: str, fields: list[str]) -> None:
 
 
 def test_error_texts() -> None:
-    assert {"min_greater_max", "options_required", "attribute_names_required"} <= set(
-        DEVICE["error"]
-    )
+    assert {
+        "min_greater_max",
+        "options_required",
+        "attribute_names_required",
+        "attribute_templates_invalid",
+        "attribute_name_reserved",
+        "attribute_template_invalid",
+    } <= set(DEVICE["error"])
 
 
 def test_every_platform_has_a_label() -> None:
@@ -98,9 +104,12 @@ def _texts(node: object) -> list[str]:
 
 
 def test_curly_braces_are_escaped_for_the_ui() -> None:
-    """The UI formats texts as ICU messages: a literal brace must be written as '{' or '}'."""
+    """The UI formats texts as ICU messages: a literal brace must be written as '{' or '}'.
+
+    Only the placeholders the flow fills in ({attribute}, {error}) are left as they are.
+    """
     for text in _texts(STRINGS):
-        unescaped = re.sub(r"'[{}]+'", "", text)
+        unescaped = re.sub(r"'[{}]+'|\{(?:attribute|error)\}", "", text)
         assert "{" not in unescaped, text
         assert "}" not in unescaped, text
 

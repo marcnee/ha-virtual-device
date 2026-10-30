@@ -3,9 +3,8 @@
 from typing import Any
 from unittest.mock import ANY
 
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
-from homeassistant.data_entry_flow import FlowResult, FlowResultType
+from homeassistant.data_entry_flow import FlowResultType
 
 from custom_components.virtual_device.const import (
     CONF_ATTRIBUTE_NAMES,
@@ -17,21 +16,10 @@ from custom_components.virtual_device.const import (
 )
 
 from .conftest import SetupDevice
-from .helpers import choose, reconfigure, saved_entities, submit, suggested
+from .helpers import choose, reconfigure, save, saved_entities, source_form, submit, suggested
 
 SOURCE = "sensor.heatpump_status"
 BASICS = {CONF_PLATFORM: "binary_sensor", CONF_NAME: "Running"}
-
-
-async def source_form(hass: HomeAssistant, entry: ConfigEntry) -> FlowResult:
-    result = await reconfigure(hass, entry)
-    result = await choose(hass, result["flow_id"], "add_entity")
-    return await submit(hass, result["flow_id"], BASICS)
-
-
-async def save(hass: HomeAssistant, result: FlowResult) -> None:
-    result = await choose(hass, result["flow_id"], "save")
-    assert result["type"] is FlowResultType.ABORT
 
 
 def stored(**extra: Any) -> dict[str, Any]:
@@ -42,7 +30,7 @@ async def test_copy_all_attributes_is_stored(
     hass: HomeAssistant, setup_device: SetupDevice
 ) -> None:
     entry = await setup_device([])
-    result = await source_form(hass, entry)
+    result = await source_form(hass, entry, BASICS)
     assert result["step_id"] == "entity_source"
 
     result = await submit(
@@ -57,7 +45,7 @@ async def test_selected_attributes_are_stored(
     hass: HomeAssistant, setup_device: SetupDevice
 ) -> None:
     entry = await setup_device([])
-    result = await source_form(hass, entry)
+    result = await source_form(hass, entry, BASICS)
 
     result = await submit(
         hass,
@@ -81,7 +69,7 @@ async def test_selected_without_names_is_an_error(
     hass: HomeAssistant, setup_device: SetupDevice
 ) -> None:
     entry = await setup_device([])
-    result = await source_form(hass, entry)
+    result = await source_form(hass, entry, BASICS)
 
     result = await submit(
         hass, result["flow_id"], {CONF_SOURCE_ENTITY: SOURCE, CONF_COPY_ATTRIBUTES: "selected"}
@@ -97,7 +85,7 @@ async def test_names_are_dropped_unless_selected_is_chosen(
     hass: HomeAssistant, setup_device: SetupDevice
 ) -> None:
     entry = await setup_device([])
-    result = await source_form(hass, entry)
+    result = await source_form(hass, entry, BASICS)
 
     result = await submit(
         hass,
