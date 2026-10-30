@@ -21,6 +21,7 @@ from .const import (
     ATTR_FORWARDS_COMMANDS,
     ATTR_SOURCE_ATTRIBUTE,
     ATTR_SOURCE_ENTITY,
+    CONF_ATTRIBUTE_TEMPLATES,
     CONF_ICON,
     CONF_ID,
     CONF_NAME,
@@ -29,7 +30,7 @@ from .const import (
     CONF_VALUE_TEMPLATE,
     DOMAIN,
 )
-from .transform import ValueTransformer
+from .transform import AttributeTransformer, ValueTransformer
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -50,8 +51,9 @@ class VirtualEntity(Entity):
         self._source: str | None = config.get(CONF_SOURCE_ENTITY)
         self._attribute: str | None = config.get(CONF_SOURCE_ATTRIBUTE)
         self._transform: ValueTransformer | None = None
+        self._attribute_transform: AttributeTransformer | None = None
         self._actions: dict[str, ActionRunner] = {}
-        self._copied: dict[str, Any] = {}
+        self._derived: dict[str, Any] = {}
         self._attr_name = config[CONF_NAME]
         self._attr_unique_id = make_unique_id(subentry.subentry_id, config[CONF_ID])
         self._attr_icon = config.get(CONF_ICON)
@@ -63,7 +65,7 @@ class VirtualEntity(Entity):
     @property
     def extra_state_attributes(self) -> dict[str, Any] | None:
         """Attributes copied from the source, plus the marking of where the entity is wired to."""
-        attributes = dict(self._copied)
+        attributes = dict(self._derived)
         if self._source:
             attributes[ATTR_SOURCE_ENTITY] = self._source
         if self._attribute:
@@ -76,6 +78,9 @@ class VirtualEntity(Entity):
         """Prepare value transformation and actions, follow the source entity."""
         name = str(self._attr_name)
         self._transform = ValueTransformer(self.hass, self._config.get(CONF_VALUE_TEMPLATE), name)
+        self._attribute_transform = AttributeTransformer(
+            self.hass, self._config.get(CONF_ATTRIBUTE_TEMPLATES, {}), name
+        )
         self._actions = self._build_actions(name)
         if self._source:
             self.async_on_remove(
@@ -105,9 +110,10 @@ class VirtualEntity(Entity):
         """Derive availability and value from the current source state."""
         source_state = self.hass.states.get(self._source)
         self._attr_available = source_state is not None and source_state.state != STATE_UNAVAILABLE
-        self._copied = copied_attributes(
-            self._config, source_state.attributes if source_state else None
-        )
+        self._derived = {}
+        if source_state is not None:
+            self._derived = copied_attributes(self._config, source_state.attributes)
+            self._derived |= self._attribute_transform(self._raw_value(source_state), source_state)
         # An icon of its own wins; otherwise the entity looks like its source.
         self._attr_icon = self._config.get(CONF_ICON) or (
             source_state.attributes.get("icon") if source_state else None

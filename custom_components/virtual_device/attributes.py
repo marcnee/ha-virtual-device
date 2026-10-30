@@ -53,3 +53,17 @@ def copied_attributes(
     else:
         return {}
     return {n: source_attributes[n] for n in names if n not in RESERVED_ATTRIBUTES}
+
+
+def attribute_template_error(templates: Any) -> tuple[str, str] | None:
+    """The first problem of an attribute templates input as (error key, attribute name)."""
+    if not isinstance(templates, Mapping):
+        return "attribute_templates_invalid", ""
+    for name, template in templates.items():
+        if not isinstance(name, str) or not name.strip():
+            return "attribute_templates_invalid", str(name)
+        if not isinstance(template, str) or not template.strip():
+            return "attribute_templates_invalid", name
+        if name in RESERVED_ATTRIBUTES:
+            return "attribute_name_reserved", name
+    return None
