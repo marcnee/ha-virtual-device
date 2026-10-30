@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import logging
 from typing import Any
 
+import voluptuous as vol
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import STATE_UNAVAILABLE, STATE_UNKNOWN, Platform
 from homeassistant.core import Event, EventStateChangedData, State, callback
@@ -26,6 +28,8 @@ from .const import (
     DOMAIN,
 )
 from .transform import ValueTransformer
+
+_LOGGER = logging.getLogger(__name__)
 
 
 def make_unique_id(entry_id: str, config_id: str) -> str:
@@ -61,16 +65,24 @@ class VirtualEntity(Entity):
         """Prepare value transformation and actions, follow the source entity."""
         name = str(self._attr_name)
         self._transform = ValueTransformer(self.hass, self._config.get(CONF_VALUE_TEMPLATE), name)
-        self._actions = {
-            key: ActionRunner(self.hass, self._config[key], name)
-            for key in ACTION_KEYS
-            if self._config.get(key)
-        }
+        self._actions = self._build_actions(name)
         if self._source:
             self.async_on_remove(
                 async_track_state_change_event(self.hass, [self._source], self._handle_source_event)
             )
             self._refresh()
+
+    def _build_actions(self, name: str) -> dict[str, ActionRunner]:
+        """Prepare the configured actions. An invalid one only disables that command."""
+        actions: dict[str, ActionRunner] = {}
+        for key in ACTION_KEYS:
+            if not self._config.get(key):
+                continue
+            try:
+                actions[key] = ActionRunner(self.hass, self._config[key], name)
+            except vol.Invalid as err:
+                _LOGGER.error("Invalid action (%s) of '%s': %s", key, name, err)
+        return actions
 
     @callback
     def _handle_source_event(self, event: Event[EventStateChangedData]) -> None:
