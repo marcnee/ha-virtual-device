@@ -536,6 +536,8 @@ class VirtualDeviceSubentryFlow(ConfigSubentryFlow):
         assert schema is not None
         wanted = {str(key) for key in schema.schema}
         source = self.hass.states.get(self._draft.get(CONF_SOURCE_ENTITY, ""))
-        for key, value in (defaults_from_source(source) | forwarding_actions(source)).items():
+        for key, value in (
+            defaults_from_source(source, platform) | forwarding_actions(source)
+        ).items():
             if key in wanted:
                 self._draft.setdefault(key, value)

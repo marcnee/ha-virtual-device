@@ -87,3 +87,25 @@ def test_select_options_are_taken_over() -> None:
 
 def test_attributes_that_are_not_there_give_no_keys() -> None:
     assert set(defaults("sensor.x")) == {CONF_NAME, CONF_PLATFORM}
+
+
+def test_a_binary_sensor_source_suggests_its_binary_device_class() -> None:
+    assert defaults("binary_sensor.x", "off", device_class="door")[CONF_DEVICE_CLASS] == "door"
+
+
+def test_a_sensor_source_does_not_suggest_a_binary_device_class() -> None:
+    assert CONF_DEVICE_CLASS not in defaults("sensor.x", device_class="door")
+
+
+def test_the_device_class_is_checked_for_the_platform_of_the_virtual_entity() -> None:
+    state = State("sensor.x", "1", {"device_class": "temperature"})
+
+    assert defaults_from_source(state, "sensor")[CONF_DEVICE_CLASS] == "temperature"
+    assert CONF_DEVICE_CLASS not in defaults_from_source(state, "binary_sensor")
+
+
+def test_a_class_both_kinds_have_is_suggested_for_either() -> None:
+    state = State("binary_sensor.x", "off", {"device_class": "battery"})
+
+    assert defaults_from_source(state, "sensor")[CONF_DEVICE_CLASS] == "battery"
+    assert defaults_from_source(state, "binary_sensor")[CONF_DEVICE_CLASS] == "battery"
