@@ -5,7 +5,7 @@ shows it when you update). Describe what changes for the people who use the inte
 
 ## [Unreleased]
 
-## [0.1.0] - unreleased
+## [0.1.0] - 2026-10-30
 
 First release.
 
