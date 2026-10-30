@@ -18,7 +18,7 @@ jobs:
     needs: test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - name: Tag must match the manifest version
         run: |
           version=$(python3 -c "import json; print(json.load(open('custom_components/virtual_device/manifest.json'))['version'])")
