@@ -51,7 +51,7 @@ async def test_menu_offers_add_and_save_for_an_empty_device(
     result = await hass.config_entries.options.async_init(entry.entry_id)
 
     assert result["type"] is FlowResultType.MENU
-    assert result["menu_options"] == ["add_entity", "save"]
+    assert result["menu_options"] == ["add_from_source", "add_entity", "save"]
 
 
 async def test_add_sensor_with_template(hass: HomeAssistant, setup_device: SetupDevice) -> None:
@@ -70,7 +70,13 @@ async def test_add_sensor_with_template(hass: HomeAssistant, setup_device: Setup
     assert result["step_id"] == "entity_details"
     result = await submit(hass, result["flow_id"], {})
     assert result["type"] is FlowResultType.MENU
-    assert result["menu_options"] == ["add_entity", "edit_entity", "remove_entity", "save"]
+    assert result["menu_options"] == [
+        "add_from_source",
+        "add_entity",
+        "edit_entity",
+        "remove_entity",
+        "save",
+    ]
     result = await choose(hass, result["flow_id"], "save")
 
     assert result["type"] is FlowResultType.CREATE_ENTRY

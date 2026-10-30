@@ -53,6 +53,7 @@ from .const import (
     PLATFORMS,
 )
 from .sensor_classes import SENSOR_DEVICE_CLASSES, SENSOR_STATE_CLASSES
+from .source_defaults import defaults_from_source
 
 # Fields kept when the platform of an entity is changed while editing.
 _SHARED_KEYS = {CONF_ID, CONF_ICON, CONF_SOURCE_ENTITY, CONF_SOURCE_ATTRIBUTE, CONF_VALUE_TEMPLATE}
@@ -126,6 +127,11 @@ class VirtualDeviceOptionsFlow(OptionsFlow):
     def __init__(self) -> None:
         self._entities: list[dict[str, Any]] | None = None
         self._draft: dict[str, Any] = {}
+        # True while a new entity is created (as opposed to edited): then values suggested by
+        # the source entity fill the forms.
+        self._adding = False
+        # True when the source was already asked for, in the "add from source" path.
+        self._source_done = False
 
     @property
     def _working_copy(self) -> list[dict[str, Any]]:
@@ -154,7 +160,7 @@ class VirtualDeviceOptionsFlow(OptionsFlow):
     # ---- menu -----------------------------------------------------------------------------
     async def async_step_init(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         """Main menu."""
-        menu = ["add_entity"]
+        menu = ["add_from_source", "add_entity"]
         if self._working_copy:
             menu += ["edit_entity", "remove_entity"]
         menu.append("save")
@@ -197,6 +203,8 @@ class VirtualDeviceOptionsFlow(OptionsFlow):
         if user_input is not None:
             chosen = next(e for e in self._working_copy if e[CONF_ID] == user_input[CONF_PICK])
             self._draft = deepcopy(chosen)
+            self._adding = False
+            self._source_done = False
             return self._show_basics_form()
         schema = vol.Schema(
             {
@@ -216,6 +224,8 @@ class VirtualDeviceOptionsFlow(OptionsFlow):
         """Platform and name."""
         if user_input is None:
             self._draft = {}
+            self._adding = True
+            self._source_done = False
             return self._show_basics_form()
         platform = user_input[CONF_PLATFORM]
         if self._draft.get(CONF_PLATFORM, platform) != platform:
@@ -226,8 +236,28 @@ class VirtualDeviceOptionsFlow(OptionsFlow):
         if icon := user_input.get(CONF_ICON):
             self._draft[CONF_ICON] = icon
         if platform == Platform.BUTTON:
+            for key in (CONF_SOURCE_ENTITY, CONF_SOURCE_ATTRIBUTE, CONF_VALUE_TEMPLATE):
+                self._draft.pop(key, None)
             return await self.async_step_entity_details()
+        if self._source_done:
+            return await self._next_after_source()
         return await self.async_step_entity_source()
+
+    async def async_step_add_from_source(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Start with the source; type and name are then suggested from it."""
+        if user_input is None:
+            self._draft = {}
+            self._adding = True
+            self._source_done = True
+            return self.async_show_form(
+                step_id="add_from_source", data_schema=self._source_schema()
+            )
+        self._merge(self._source_schema(), user_input)
+        suggestions = defaults_from_source(self.hass.states.get(user_input[CONF_SOURCE_ENTITY]))
+        self._draft |= {k: v for k, v in suggestions.items() if k in (CONF_NAME, CONF_PLATFORM)}
+        return self._show_basics_form()
 
     def _show_basics_form(self) -> ConfigFlowResult:
         schema = vol.Schema(
@@ -285,6 +315,8 @@ class VirtualDeviceOptionsFlow(OptionsFlow):
     ) -> ConfigFlowResult:
         """Platform specific settings, such as the actions forwarding commands."""
         platform = self._draft[CONF_PLATFORM]
+        if user_input is None and self._adding:
+            self._suggest_from_source(platform)
         schema = _details_schema(platform, self._draft)
         assert schema is not None
         errors: dict[str, str] = {}
@@ -297,3 +329,13 @@ class VirtualDeviceOptionsFlow(OptionsFlow):
             self._draft |= user_input
             schema = _details_schema(platform, self._draft)
         return self.async_show_form(step_id="entity_details", data_schema=schema, errors=errors)
+
+    def _suggest_from_source(self, platform: str) -> None:
+        """Fill details the user has not set yet with what the source entity suggests."""
+        schema = _details_schema(platform, self._draft)
+        assert schema is not None
+        wanted = {str(key) for key in schema.schema}
+        source = self.hass.states.get(self._draft.get(CONF_SOURCE_ENTITY, ""))
+        for key, value in defaults_from_source(source).items():
+            if key in wanted:
+                self._draft.setdefault(key, value)
