@@ -31,6 +31,10 @@ and CI. When bumping, update `requirements_test.txt`, `hacs.json`, `compose.yaml
   version is the text of its GitHub release.
 - Do not change the layout of stored data without a migration step in `migration.py`, raised
   `VERSION`/`MINOR_VERSION` and a test (see DEVELOPMENT.md).
+- Released versions are frozen in `tests/released/*.json`; never edit those files and keep
+  `tests/test_released_layouts.py` green. Unique IDs, entity IDs, stored keys, the attributes
+  `source_entity`/`source_attribute`/`forwards_commands` and the command event are public: a
+  change needs a migration and a `### Breaking` entry in the CHANGELOG (see DEVELOPMENT.md).
 
 ## Commands
 

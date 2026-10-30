@@ -214,6 +214,29 @@ a migration, otherwise their devices stop working after the update:
 3. Write the test first: copy the pattern in `tests/test_migration.py` with data in the old layout.
    `tests/test_migration_steps.py` checks that the steps lead to the current version.
 4. Describe the change in the `[Unreleased]` section of `CHANGELOG.md`.
+5. When the release changes the layout, add `tests/released/<version>.json` (copy the previous
+   file, change the stored data and what the user sees from it). Never edit an existing file:
+   it is what users have stored.
+
+`tests/test_released_layouts.py` loads every file in `tests/released/` (the layout of a release,
+with sources, expected entities and commands) and checks that unique IDs, entity IDs, device,
+states, attributes and forwarded commands are still the same, and that a migration path leads to
+the current version. If it fails, you are about to break existing installations.
+
+### Breaking changes
+
+Users depend on more than the stored data. These are breaking when they change:
+
+- unique IDs and entity IDs of the virtual entities, and the device identifiers
+- the stored keys of devices and entities (`const.py`)
+- the attributes `source_entity`, `source_attribute` and `forwards_commands`
+- the event `virtual_device_command_forwarded` and its data
+- removing an entity type or an option, or raising the minimum Home Assistant version
+
+Rules: prefer additive changes (a new optional field with a default). Renaming or removing
+something above needs a migration step, a released-layout test, and a `### Breaking` section
+at the top of the version in `CHANGELOG.md` that says what users have to do (if anything). While
+the version is 0.x, a breaking change raises the minor version (0.2.0), otherwise the major one.
 
 Home Assistant calls `async_migrate_entry` when the stored version is older and refuses entries
 that are newer than the code (downgrade). The migration changes nothing if one step fails.

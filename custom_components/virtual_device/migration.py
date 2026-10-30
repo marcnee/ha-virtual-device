@@ -6,6 +6,8 @@ How to change the stored data after a release:
    default) or `VERSION` for a change that old data cannot be used for.
 2. Add a `Step` below that leads from the previous version to the new one.
 3. Add a test with data in the old layout (see tests/test_migration.py) and a CHANGELOG entry.
+4. Keep tests/test_released_layouts.py green: it loads the layout of every release and checks
+   that unique IDs, entity IDs, states, attributes, the device and commands stay the same.
 """
 
 from __future__ import annotations
@@ -27,7 +29,8 @@ class Step:
     migrate_device: Callable[[dict[str, Any]], dict[str, Any]]
 
 
-# In order, each step starting where the previous one ended. None yet: no release so far.
+# In order, each step starting where the previous one ended. None yet: 0.1.0 (version 2.1) is the
+# only layout released so far; tests/released/0.1.0.json freezes it.
 STEPS: tuple[Step, ...] = ()
 
 

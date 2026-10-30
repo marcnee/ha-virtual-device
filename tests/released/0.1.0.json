@@ -1,0 +1,153 @@
+{
+  "release": "0.1.0",
+  "entry": {"version": 2, "minor_version": 1},
+  "device": {
+    "subentry_id": "released010heatpump",
+    "title": "Heat pump",
+    "data": {
+      "manufacturer": "ACME",
+      "model": "HP-1",
+      "entities": [
+        {
+          "id": "status",
+          "platform": "sensor",
+          "name": "Status",
+          "source_entity": "sensor.heatpump_status",
+          "value_template": "{{ value.split(' - ')[-1] }}",
+          "icon": "mdi:heat-pump",
+          "copy_attributes": "selected",
+          "attribute_names": ["error_code"],
+          "attribute_templates": {"next_code": "{{ attributes.error_code | int + 1 }}"}
+        },
+        {
+          "id": "temperature",
+          "platform": "sensor",
+          "name": "Temperature",
+          "source_entity": "sensor.heatpump_temperature",
+          "unit_of_measurement": "°C",
+          "device_class": "temperature",
+          "state_class": "measurement"
+        },
+        {
+          "id": "flow",
+          "platform": "sensor",
+          "name": "Flow",
+          "source_entity": "climate.heatpump",
+          "source_attribute": "flow_temperature"
+        },
+        {
+          "id": "door",
+          "platform": "binary_sensor",
+          "name": "Door",
+          "source_entity": "binary_sensor.heatpump_door"
+        },
+        {
+          "id": "power",
+          "platform": "switch",
+          "name": "Power",
+          "source_entity": "switch.heatpump_power",
+          "action_on": [{"action": "test.on"}],
+          "action_off": [{"action": "test.off"}]
+        },
+        {
+          "id": "target",
+          "platform": "number",
+          "name": "Target",
+          "source_entity": "sensor.heatpump_target",
+          "min_value": 10,
+          "max_value": 30,
+          "step": 0.5,
+          "unit_of_measurement": "°C",
+          "action_set": [{"action": "test.set", "data": {"value": "{{ value }}"}}]
+        },
+        {
+          "id": "mode",
+          "platform": "select",
+          "name": "Mode",
+          "source_entity": "sensor.heatpump_mode",
+          "value_template": "{{ value.split(' - ', 1)[-1] }}",
+          "options": ["In Betrieb", "Standby"],
+          "action_select": [
+            {
+              "action": "test.select",
+              "data": {"code": "{{ {'In Betrieb': 18, 'Standby': 19}[option] }}"}
+            }
+          ]
+        },
+        {
+          "id": "defrost",
+          "platform": "button",
+          "name": "Defrost",
+          "action_press": [{"action": "test.defrost"}]
+        }
+      ]
+    }
+  },
+  "sources": {
+    "sensor.heatpump_status": {"state": "18 - In Betrieb", "attributes": {"error_code": 7, "other": "x"}},
+    "sensor.heatpump_temperature": {"state": "21.5", "attributes": {}},
+    "climate.heatpump": {"state": "heat", "attributes": {"flow_temperature": 35}},
+    "binary_sensor.heatpump_door": {"state": "on", "attributes": {}},
+    "switch.heatpump_power": {"state": "on", "attributes": {}},
+    "sensor.heatpump_target": {"state": "21.5", "attributes": {}},
+    "sensor.heatpump_mode": {"state": "18 - In Betrieb", "attributes": {}}
+  },
+  "expected": {
+    "status": {
+      "entity_id": "sensor.heat_pump_status",
+      "state": "In Betrieb",
+      "attributes": {
+        "error_code": 7,
+        "next_code": 8,
+        "icon": "mdi:heat-pump",
+        "source_entity": "sensor.heatpump_status"
+      },
+      "absent_attributes": ["other"]
+    },
+    "temperature": {
+      "entity_id": "sensor.heat_pump_temperature",
+      "state": "21.5",
+      "attributes": {
+        "unit_of_measurement": "°C",
+        "device_class": "temperature",
+        "state_class": "measurement"
+      }
+    },
+    "flow": {
+      "entity_id": "sensor.heat_pump_flow",
+      "state": "35",
+      "attributes": {"source_entity": "climate.heatpump", "source_attribute": "flow_temperature"}
+    },
+    "door": {
+      "entity_id": "binary_sensor.heat_pump_door",
+      "state": "on",
+      "attributes": {"source_entity": "binary_sensor.heatpump_door"}
+    },
+    "power": {
+      "entity_id": "switch.heat_pump_power",
+      "state": "on",
+      "attributes": {"forwards_commands": true}
+    },
+    "target": {
+      "entity_id": "number.heat_pump_target",
+      "state": "21.5",
+      "attributes": {"min": 10, "max": 30, "step": 0.5, "unit_of_measurement": "°C"}
+    },
+    "mode": {
+      "entity_id": "select.heat_pump_mode",
+      "state": "In Betrieb",
+      "attributes": {"options": ["In Betrieb", "Standby"]}
+    },
+    "defrost": {
+      "entity_id": "button.heat_pump_defrost",
+      "state": "unknown",
+      "attributes": {}
+    }
+  },
+  "commands": [
+    {"domain": "switch", "service": "turn_off", "entity_id": "switch.heat_pump_power", "data": {}, "calls": "test.off", "call_data": {}},
+    {"domain": "number", "service": "set_value", "entity_id": "number.heat_pump_target", "data": {"value": 22.0}, "calls": "test.set", "call_data": {"value": 22.0}},
+    {"domain": "select", "service": "select_option", "entity_id": "select.heat_pump_mode", "data": {"option": "Standby"}, "calls": "test.select", "call_data": {"code": 19}},
+    {"domain": "button", "service": "press", "entity_id": "button.heat_pump_defrost", "data": {}, "calls": "test.defrost", "call_data": {}}
+  ]
+}

@@ -2,6 +2,7 @@
 
 All notable changes. The section of a version is used as the text of its GitHub release (HACS
 shows it when you update). Describe what changes for the people who use the integration.
+Changes that need action from users go under `### Breaking` at the top of their version.
 
 ## [Unreleased]
 
