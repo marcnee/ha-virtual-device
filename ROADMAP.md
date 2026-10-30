@@ -51,7 +51,24 @@ Next
 - [ ] Diagnostics
 
 Ideas, not decided
+
+Features
+- Build a device from several existing entities in one go: pick many sources, get one virtual
+  entity for each with type, name and settings suggested (the project's core idea, today it takes
+  one pass through the forms per entity)
+- Duplicate an entity (same settings and templates, new source)
 - Switch, number and select without a source entity (optimistic state)
+- A condition for binary sensors without writing a template (e.g. above 50)
+- Apply the suggestions of a source (unit, classes) to several entities at once
+
+Usability
+- Fewer forms per entity: for simple types (binary sensor, button) merge the basics and details
+- A way out of every form, since Home Assistant flows have no Back button (e.g. a *Cancel* entry)
+- A summary before saving: the entities of the device with type and source
+- Show template and source errors on the entity itself (an `error` attribute), not only in the log
+- A repair issue also for a source that stays unavailable for a long time (after a waiting time,
+  to avoid false alarms)
+- README screenshots of the forms, then remove `ignore: "images"` from `validate.yaml`
 
 Decisions
 - One config entry (service) with one config subentry per virtual device, so many devices do not
