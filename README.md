@@ -142,6 +142,12 @@ template. Numbers stay numbers. A template overrides a copied attribute of the s
 renders `none` or fails (it is logged) only leaves out its attribute. The reserved names above
 cannot be used.
 
+## Updating
+
+Update through HACS; the release notes are shown there. Your devices are migrated automatically
+when the stored layout changes. Home Assistant refuses entries that were saved by a newer version,
+so downgrade only together with a backup.
+
 ## Limitations (see ROADMAP.md)
 
 - Six entity types only (sensor, binary sensor, switch, number, select, button). Lights, climate
