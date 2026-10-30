@@ -63,6 +63,58 @@ python scripts/render_brand.py
 
 and commit the PNGs.
 
+## Release checklist
+
+Go through this before tagging. The automatic checks do not replace the manual ones: the tests
+use a fake Home Assistant and never see the real UI.
+
+**Code and docs**
+- [ ] `CHANGELOG.md`: `[Unreleased]` renamed to the version with its date, new empty `[Unreleased]`
+- [ ] `manifest.json` version raised; if stored data changed: `MINOR_VERSION`/`VERSION`, a
+      migration step and its test (see "Changing the stored data")
+- [ ] README and ROADMAP match what the release does
+- [ ] `hacs.json` minimum Home Assistant version still correct
+
+**Automatic checks, all green** (locally and on GitHub)
+- [ ] `docker compose run --rm lint` and `docker compose run --rm test`
+- [ ] `docker compose run --rm hassfest`
+- [ ] `docker compose run --rm test-latest` (newest Home Assistant); the beta is informational
+- [ ] GitHub: CI, Hassfest and the `ha-compat` workflow are green for the commit to be tagged
+
+**Manual check in a real Home Assistant** (`docker compose --profile dev up homeassistant`,
+start with an empty `dev/config`)
+- [ ] The integration is listed with its icon; setting it up works once and a second attempt is
+      refused
+- [ ] *Add virtual device* with name, manufacturer and model; they show on the device page
+- [ ] *Add entity from a source* for a sensor with a value template: type, name, unit and classes
+      are suggested; the entity shows the transformed value and follows the source
+- [ ] Switch and number from a controllable source: the actions are prefilled and really control
+      the source (check the source changes, not only the virtual entity)
+- [ ] Select with a mapping action and a button with an action
+- [ ] *Selected attributes* lists the attributes of the source; copied attributes and attribute
+      templates show up and follow the source; invalid templates show an error in the form
+- [ ] The icon of the source is used; an own icon wins
+- [ ] Edit an entity and a device (*Device settings*): the other devices keep running, no restart
+      of the whole service
+- [ ] Remove an entity and a device: they disappear from the entity and device registry, the
+      source entities stay untouched
+- [ ] Restart Home Assistant: everything comes back with the same entity IDs
+- [ ] A source that becomes unavailable makes its virtual entity unavailable and back again
+- [ ] Look at the log: no errors or warnings from `custom_components.virtual_device`
+
+**Upgrade check** (from the first release on)
+- [ ] Install the previous release in a dev instance with a few devices, then update to the new
+      version: devices and entities are intact, the log shows no migration error
+- [ ] Only for a data change: the migrated data in `dev/config/.storage/core.config_entries` has
+      the new layout
+
+**After tagging**
+- [ ] The `Release` workflow is green and the release has `virtual_device.zip` and the
+      CHANGELOG section as notes
+- [ ] HACS: add the repository as a custom repository (or update), install the release, restart
+      and check that the integration loads
+- [ ] Open the new `[Unreleased]` section for the next changes
+
 ## Release
 
 HACS installs the `virtual_device.zip` attached to a GitHub release.
