@@ -17,6 +17,9 @@ PLATFORMS = [
 CONF_DEVICE_NAME = "device_name"
 CONF_ENTITIES = "entities"
 
+# Options flow
+CONF_PICK = "virtual_entity"
+
 # Keys of one virtual entity definition (stored in the config entry options)
 CONF_ID = "id"
 CONF_PLATFORM = "platform"
