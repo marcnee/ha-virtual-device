@@ -32,9 +32,12 @@ folder and restart.
 4. **Save and finish**. The entities appear under the new virtual device.
 
 To change a device, open its menu on the entry and choose **Edit virtual device**; delete it there
-too. **Device settings** in that menu changes its name, manufacturer and model. Changes only apply after *Save and finish*. Removed entities are deleted from the entity
-registry. You can add as many virtual devices as you like. Saving a change does not reload the
-service: only the entities you changed are restarted, all other entities and devices keep running.
+too. In the menu you can add, edit and remove entities, and **Device settings** changes the name,
+manufacturer and model. Changes only apply after *Save and finish*. Removed entities are deleted
+from the entity registry. You can add as many virtual devices as you like.
+
+Saving a change does not reload the service: only the entities whose settings changed are
+restarted (briefly unavailable, same entity ID), all other entities and devices keep running.
 
 ## Entity types
 
@@ -47,8 +50,9 @@ service: only the entities you changed are restarted, all other entities and dev
 | Select | One of your options | action with `{{ option }}` |
 | Button | Nothing | action when pressed (no source needed) |
 
-Every entity can have its own icon. A virtual entity is *unavailable* while its source is unavailable, and *unknown* while the source
-is unknown, has no such attribute or the template fails or returns nothing.
+Every entity can have its own icon. A virtual entity is *unavailable* while its source is
+unavailable, and *unknown* while the source is unknown, has no such attribute or the template
+fails or returns nothing.
 
 Binary sensors and switches treat the (transformed) value `on`, `true`, `1` and `yes` as on and
 everything else as off. Use a template for other conventions.
@@ -120,8 +124,8 @@ only puts an icon into a state if it was customized; default icons of a type or 
 not copied.)
 
 The source forms also offer **Copy source attributes**: none (default), all, or selected
-attributes (a next step offers the attributes the source has right now; you can also type names). Copied attributes follow the source. Attributes Home Assistant
-sets itself (`friendly_name`, `icon`, `unit_of_measurement`, `device_class`, `state_class`,
+attributes (a next step offers the attributes the source has right now; you can also type
+names). Copied attributes follow the source. Attributes Home Assistant sets itself (`friendly_name`, `icon`, `unit_of_measurement`, `device_class`, `state_class`,
 `entity_picture`, `supported_features`, `options`, `min`, `max`, `step`, `mode`) and the three
 attributes above are never copied.
 
@@ -140,4 +144,11 @@ cannot be used.
 
 ## Limitations (see ROADMAP.md)
 
+- Six entity types only (sensor, binary sensor, switch, number, select, button). Lights, climate
+  and others cannot be rebuilt yet.
+- Commands reach the source only through the actions you configure (or the suggested ones). A
+  switch, number or select never assumes a new state; it follows the source.
+- A device has no icon of its own, because Home Assistant has none for devices. Entities do.
 - Only English texts for now.
+- Entries from before the single-service layout are not migrated: delete them and add the virtual
+  devices again.
