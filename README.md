@@ -3,7 +3,9 @@
 Bundle entities of **different integrations** into one **virtual device**.
 
 - The source entities are **never modified**. New entities are created and grouped under the
-  virtual device.
+  virtual device. The integration only touches its own entities, devices and settings; the
+  rest of your system stays as it is. The one effect on a source is a command you forward to it
+  with an action you configured.
 - **Transform values** with a template, for example `18 - In Betrieb` becomes `In Betrieb`.
 - Build **several virtual entities from the same source** (a text and a number, say).
 - **Forward commands** to the source integration with ordinary Home Assistant actions.

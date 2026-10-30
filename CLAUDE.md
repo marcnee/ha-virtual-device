@@ -9,6 +9,11 @@ it creates new ones grouped under the virtual device.
 - **Do not guess.** If requirements are unclear, ask the user.
 - **TDD.** Failing test first, run it and see it fail for the right reason, then the smallest
   implementation, then refactor. One small commit per green step.
+- **Stay within the integration.** Never change existing entities, devices, registry entries,
+  settings or services of the system; only the integration's own config entry, devices and
+  entities. Sources are only read. The one effect on a source is a command the user forwards with
+  an action they configured. `tests/test_isolation.py` guards this; keep it green and extend it
+  for new features.
 - Everything (code, comments, README, UI strings) is English for now.
 - All configuration happens through config/options flows. No YAML configuration, no extra web UI.
 - Keep it clean and maintainable: small modules, pure logic separated from Home Assistant glue,
