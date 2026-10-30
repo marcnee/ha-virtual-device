@@ -9,6 +9,7 @@ Done
 - [x] Options flow to add, edit and remove entities
 - [x] Stale entities are removed from the registry
 - [x] Sensor options: unit, device class, state class
+- [x] Suggested settings from the source entity (name, type, unit, classes, range, options)
 - [x] Optional icon per virtual entity
 - [x] A broken action only disables that command
 - [x] English translations

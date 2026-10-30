@@ -23,8 +23,10 @@ folder and restart.
 
 1. *Settings → Devices & services → Add integration → Virtual Device*, enter a device name.
 2. Click **Configure** on the new entry.
-3. **Add entity**: choose a type and a name, then the source entity and an optional template,
-   then the type specific details.
+3. **Add entity from a source**: pick the source entity (and optional attribute and template).
+   Type, name, unit, device class, number range and select options are suggested from it and can be
+   changed. Or use **Add entity manually**: type and name first, then the source. Use this for
+   buttons, which need no source.
 4. **Save and finish**. The device reloads and the entities appear under the virtual device.
 
 Edit or remove entities the same way. Changes only apply after *Save and finish*. Removed
