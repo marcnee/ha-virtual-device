@@ -54,6 +54,22 @@
             ],
             "justMyCode": false,
             "preLaunchTask": "Docker: Home Assistant with debugger"
+        },
+        {
+            "name": "Attach: Home Assistant in Docker (already running)",
+            "type": "debugpy",
+            "request": "attach",
+            "connect": {
+                "host": "localhost",
+                "port": 5679
+            },
+            "pathMappings": [
+                {
+                    "localRoot": "${workspaceFolder}/custom_components/virtual_device",
+                    "remoteRoot": "/config/custom_components/virtual_device"
+                }
+            ],
+            "justMyCode": false
         }
     ]
 }

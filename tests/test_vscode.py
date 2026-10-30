@@ -10,6 +10,7 @@ import yaml
 
 ROOT = Path(__file__).parents[1]
 WORKSPACE = "${workspaceFolder}"
+RUNNING = "Attach: Home Assistant in Docker (already running)"
 
 
 def load_json(name: str) -> dict[str, Any]:
@@ -40,6 +41,7 @@ def test_both_docker_debug_sessions_exist() -> None:
     assert {c["name"] for c in attach_configs()} == {
         "Attach: tests in Docker",
         "Attach: Home Assistant in Docker",
+        RUNNING,
     }
 
 
@@ -79,7 +81,19 @@ def test_the_home_assistant_debug_service_runs_the_pinned_version_with_debugpy()
     ]
 
 
-@pytest.mark.parametrize("config", attach_configs(), ids=lambda c: c["name"])
+def test_attaching_to_an_instance_that_already_runs_starts_nothing() -> None:
+    running = launch(RUNNING)
+    started = launch("Attach: Home Assistant in Docker")
+
+    assert "preLaunchTask" not in running
+    assert {k: v for k, v in running.items() if k != "name"} == {
+        k: v for k, v in started.items() if k not in ("name", "preLaunchTask")
+    }
+
+
+@pytest.mark.parametrize(
+    "config", [c for c in attach_configs() if c["name"] != RUNNING], ids=lambda c: c["name"]
+)
 def test_an_attach_config_starts_its_container_and_waits_until_the_debugger_listens(config) -> None:
     task = next(t for t in TASKS["tasks"] if t["label"] == config["preLaunchTask"])
     background = task["problemMatcher"]["background"]

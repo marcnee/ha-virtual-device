@@ -77,6 +77,7 @@ Create the venv from "Tests (TDD)" as `.venv`; VS Code picks it up.
 | `Tests: all`, `Tests: current file` | Runs pytest in the venv under the debugger |
 | `Attach: tests in Docker` | Starts the task `Docker: debug tests` itself (it asks for pytest options, for example `-k sensor`), waits until the debugger listens and attaches; the tests only start then |
 | `Attach: Home Assistant in Docker` | Starts the task `Docker: Home Assistant with debugger` itself (the instance keeps running in a terminal; end the task to stop it) and attaches. Breakpoints in `custom_components/virtual_device` work; to stop in the setup, reload the integration or restart the container after attaching |
+| `Attach: Home Assistant in Docker (already running)` | Only attaches, starts nothing: for an instance that already runs (started by hand with `docker compose --profile dev up homeassistant-debug` or by the configuration above) |
 
 The attach configurations need no manual `docker compose` call: the pre-launch task starts the
 container, and VS Code attaches once the container prints `Debugger listening on port ...`
