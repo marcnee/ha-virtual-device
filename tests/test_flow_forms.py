@@ -102,11 +102,13 @@ def test_the_source_form_requires_only_the_source_entity() -> None:
         "value_template",
         "copy_attributes",
         "attribute_templates",
+        "test_template",
     }
     assert [n for n, key in fields(schema).items() if isinstance(key, vol.Required)] == [
         "source_entity"
     ]
     assert fields(schema)["source_entity"].description == {"suggested_value": "sensor.x"}
+    assert fields(schema)["test_template"].default is vol.UNDEFINED  # never prefilled
 
 
 def test_the_attribute_choice_offers_the_attributes_of_the_source_and_free_input() -> None:

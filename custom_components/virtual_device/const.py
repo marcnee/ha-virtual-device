@@ -23,6 +23,9 @@ CONF_ENTITIES = "entities"
 # Options flow
 CONF_PICK = "virtual_entity"
 
+# Field of the source forms that shows the result of the templates; never stored
+CONF_TEST_TEMPLATE = "test_template"
+
 # Keys of one virtual entity definition (stored in the config entry options)
 CONF_ID = "id"
 CONF_PLATFORM = "platform"

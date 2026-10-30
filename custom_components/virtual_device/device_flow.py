@@ -36,6 +36,7 @@ from .const import (
     CONF_PLATFORM,
     CONF_SOURCE_ATTRIBUTE,
     CONF_SOURCE_ENTITY,
+    CONF_TEST_TEMPLATE,
     CONF_VALUE_TEMPLATE,
     COPY_SELECTED,
 )
@@ -49,6 +50,7 @@ from .flow_forms import (
 from .flow_validation import validate_details, validate_source
 from .forwarding import forwarding_actions
 from .source_defaults import defaults_from_source
+from .template_preview import build_preview
 
 # Fields kept when the platform of an entity is changed while editing.
 _SOURCE_KEYS = (
@@ -268,11 +270,8 @@ class VirtualDeviceSubentryFlow(ConfigSubentryFlow):
             self._draft = {}
             self._mode = _Mode.ADD_FROM_SOURCE
             return self._show_source_form("add_from_source")
-        errors, placeholders = validate_source(self.hass, user_input)
-        if errors:
-            self._draft |= user_input
-            return self._show_source_form("add_from_source", errors, placeholders)
-        self._take_source(user_input)
+        if (again := self._take_source_input("add_from_source", user_input)) is not None:
+            return again
         suggestions = defaults_from_source(self.hass.states.get(user_input[CONF_SOURCE_ENTITY]))
         self._draft |= {k: v for k, v in suggestions.items() if k in (CONF_NAME, CONF_PLATFORM)}
         return await self._after_source_form()
@@ -285,11 +284,8 @@ class VirtualDeviceSubentryFlow(ConfigSubentryFlow):
     ) -> SubentryFlowResult:
         """Source entity, source attribute, value template and copied attributes."""
         if user_input is not None:
-            errors, placeholders = validate_source(self.hass, user_input)
-            if errors:
-                self._draft |= user_input
-                return self._show_source_form("entity_source", errors, placeholders)
-            self._take_source(user_input)
+            if (again := self._take_source_input("entity_source", user_input)) is not None:
+                return again
             return await self._after_source_form()
         return self._show_source_form("entity_source")
 
@@ -321,17 +317,37 @@ class VirtualDeviceSubentryFlow(ConfigSubentryFlow):
         schema = attributes_schema(self._draft, offered)
         return self.async_show_form(step_id="select_attributes", data_schema=schema, errors=errors)
 
+    def _take_source_input(
+        self, step_id: str, user_input: dict[str, Any]
+    ) -> SubentryFlowResult | None:
+        """Take the source form into the draft.
+
+        Returns the form to show again if the input has errors or if the user asked to test the
+        templates; None if the flow goes on.
+        """
+        user_input = dict(user_input)
+        test = user_input.pop(CONF_TEST_TEMPLATE, False)
+        errors, placeholders = validate_source(self.hass, user_input)
+        if errors:
+            self._draft |= user_input
+            return self._show_source_form(step_id, errors, placeholders)
+        self._take_source(user_input)
+        return self._show_source_form(step_id) if test else None
+
     def _show_source_form(
         self,
         step_id: str,
         errors: dict[str, str] | None = None,
         placeholders: dict[str, str] | None = None,
     ) -> SubentryFlowResult:
+        """The source form, with what the templates make of the current state of the source."""
+        source = self.hass.states.get(self._draft.get(CONF_SOURCE_ENTITY, ""))
         return self.async_show_form(
             step_id=step_id,
             data_schema=source_schema(self._draft),
             errors=errors,
-            description_placeholders=placeholders,
+            description_placeholders=build_preview(self.hass, self._draft, source)
+            | (placeholders or {}),
         )
 
     def _take_source(self, user_input: dict[str, Any]) -> None:

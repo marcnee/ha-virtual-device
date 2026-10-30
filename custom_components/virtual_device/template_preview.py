@@ -30,6 +30,17 @@ def _show_error(error: TemplateError) -> str:
     return _ERROR + " ".join(str(error).split())
 
 
+def _usable(templates: Any) -> dict[str, str]:
+    """The attribute templates that are well-formed; the input may not have passed the checks."""
+    if not isinstance(templates, Mapping):
+        return {}
+    return {
+        name: text
+        for name, text in templates.items()
+        if isinstance(name, str) and name.strip() and isinstance(text, str) and text.strip()
+    }
+
+
 def build_preview(
     hass: HomeAssistant, config: Mapping[str, Any], state: State | None
 ) -> dict[str, str]:
@@ -44,7 +55,7 @@ def build_preview(
             preview["value_result"] = _show(ValueTransformer(hass, template, "").render(raw, state))
         except TemplateError as err:
             preview["value_result"] = _show_error(err)
-    if templates := config.get(CONF_ATTRIBUTE_TEMPLATES):
+    if templates := _usable(config.get(CONF_ATTRIBUTE_TEMPLATES)):
         rendered = AttributeTransformer(hass, templates, "").render(raw, state)
         preview["attribute_results"] = ", ".join(
             f"`{name}`: " + (_show_error(r) if isinstance(r, TemplateError) else _show(r))

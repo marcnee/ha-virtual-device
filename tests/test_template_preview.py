@@ -86,3 +86,11 @@ def test_long_values_are_cut_and_markup_is_made_harmless(hass: HomeAssistant) ->
     assert text.count("`") == 2
     assert text.endswith("…`")
     assert len(text) < 120
+
+
+def test_invalid_attribute_templates_are_ignored(hass: HomeAssistant) -> None:
+    """The preview is also built from input that did not pass the checks of the form."""
+    for templates in ("text", ["a"], {"": "{{ 1 }}"}, {"a": None}, {"a": " "}, {1: "{{ 1 }}"}):
+        result = preview(hass, **{CONF_ATTRIBUTE_TEMPLATES: templates})
+
+        assert result["attribute_results"] == NOTHING

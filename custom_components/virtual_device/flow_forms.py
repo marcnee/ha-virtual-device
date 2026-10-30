@@ -8,6 +8,7 @@ import voluptuous as vol
 from homeassistant.const import Platform
 from homeassistant.helpers.selector import (
     ActionSelector,
+    BooleanSelector,
     EntitySelector,
     IconSelector,
     NumberSelector,
@@ -45,6 +46,7 @@ from .const import (
     CONF_SOURCE_ENTITY,
     CONF_STATE_CLASS,
     CONF_STEP,
+    CONF_TEST_TEMPLATE,
     CONF_UNIT,
     CONF_VALUE_TEMPLATE,
     COPY_MODES,
@@ -159,6 +161,7 @@ def source_schema(draft: dict[str, Any]) -> vol.Schema:
             vol.Optional(
                 CONF_ATTRIBUTE_TEMPLATES, description=suggest(draft, CONF_ATTRIBUTE_TEMPLATES)
             ): ObjectSelector(),
+            vol.Optional(CONF_TEST_TEMPLATE): BooleanSelector(),
         }
     )
 
