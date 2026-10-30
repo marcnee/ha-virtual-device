@@ -1,0 +1,12 @@
+{
+  "domain": "virtual_device",
+  "name": "Virtual Device",
+  "codeowners": ["@marcnee"],
+  "config_flow": true,
+  "documentation": "https://github.com/marcnee/ha-virtual-device",
+  "integration_type": "service",
+  "iot_class": "local_push",
+  "issue_tracker": "https://github.com/marcnee/ha-virtual-device/issues",
+  "requirements": [],
+  "version": "0.1.0"
+}
