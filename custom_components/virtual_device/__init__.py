@@ -7,14 +7,17 @@ import logging
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 
-from .const import PLATFORMS
+from . import migration
+from .config_flow import VirtualDeviceConfigFlow
+from .const import PLATFORMS, SUBENTRY_TYPE_DEVICE
 from .manager import EntityManager, VirtualDeviceConfigEntry
+from .migration import migrate_device_data
 
 _LOGGER = logging.getLogger(__name__)
 
 
 async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """Reject entries of the unreleased one-entry-per-device layout."""
+    """Bring the data of all virtual devices to the current layout (see migration.py)."""
     if entry.version < 2:
         _LOGGER.error(
             "Virtual Device entry '%s' uses an outdated layout from before the first release: "
@@ -22,6 +25,24 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             entry.title,
         )
         return False
+    version = (entry.version, entry.minor_version)
+    # Migrate everything first, so that a failure leaves the stored data untouched.
+    try:
+        migrated = {
+            subentry.subentry_id: migrate_device_data(subentry.data, version, migration.STEPS)
+            for subentry in entry.subentries.values()
+            if subentry.subentry_type == SUBENTRY_TYPE_DEVICE
+        }
+    except Exception:
+        _LOGGER.exception("Migrating '%s' from version %s.%s failed", entry.title, *version)
+        return False
+    for subentry_id, data in migrated.items():
+        hass.config_entries.async_update_subentry(entry, entry.subentries[subentry_id], data=data)
+    hass.config_entries.async_update_entry(
+        entry,
+        version=VirtualDeviceConfigFlow.VERSION,
+        minor_version=VirtualDeviceConfigFlow.MINOR_VERSION,
+    )
     return True
 
 
