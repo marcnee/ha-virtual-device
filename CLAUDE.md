@@ -78,5 +78,7 @@ End commit messages with:
 
 ```
 Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
-Claude-Session: <session url>
 ```
+
+No session link (`Claude-Session: ...`) in commit messages or pull requests: the repository is
+public.
