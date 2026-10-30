@@ -32,7 +32,7 @@ docker compose --profile dev up homeassistant
 ```
 
 Open <http://localhost:8123>, finish onboarding, then *Settings → Devices & services → Add
-integration → Virtual Device*. The integration folder is mounted, so after a code change run
+integration → Virtual Device*, then *Add virtual device* on the entry. The integration folder is mounted, so after a code change run
 `docker compose restart homeassistant`. `dev/` is not tracked by git.
 
 ## Release

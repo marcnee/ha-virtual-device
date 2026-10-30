@@ -33,14 +33,26 @@ OPTION_FIELDS = {
 }
 
 
-def test_config_flow_texts() -> None:
-    step = STRINGS["config"]["step"]["user"]
-    assert step["title"]
-    assert step["data"]["device_name"]
+DEVICE = STRINGS.get("config_subentries", {}).get("device", {})
 
 
-def test_options_menu_texts() -> None:
-    init = STRINGS["options"]["step"]["init"]
+def test_service_setup_texts() -> None:
+    assert STRINGS["config"]["step"]["user"]["description"]
+    assert STRINGS["config"]["abort"]["single_instance_allowed"]
+
+
+def test_device_flow_entry_texts() -> None:
+    assert DEVICE["entry_type"]
+    assert DEVICE["initiate_flow"]["user"]
+    assert DEVICE["initiate_flow"]["reconfigure"]
+    assert DEVICE["abort"]["reconfigure_successful"]
+    user = DEVICE["step"]["user"]
+    assert user["title"]
+    assert user["data"]["device_name"]
+
+
+def test_device_menu_texts() -> None:
+    init = DEVICE["step"]["init"]
     assert init["title"]
     assert set(init["menu_options"]) == {
         "add_from_source",
@@ -52,14 +64,14 @@ def test_options_menu_texts() -> None:
 
 
 @pytest.mark.parametrize(("step", "fields"), OPTION_FIELDS.items())
-def test_options_step_texts(step: str, fields: list[str]) -> None:
-    texts = STRINGS["options"]["step"][step]
+def test_device_step_texts(step: str, fields: list[str]) -> None:
+    texts = DEVICE["step"][step]
     assert texts["title"]
     assert set(fields) <= set(texts["data"])
 
 
 def test_error_texts() -> None:
-    assert {"min_greater_max", "options_required"} <= set(STRINGS["options"]["error"])
+    assert {"min_greater_max", "options_required"} <= set(DEVICE["error"])
 
 
 def test_every_platform_has_a_label() -> None:

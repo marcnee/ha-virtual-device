@@ -10,7 +10,7 @@ from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .entity import VirtualEntity, entity_configs
+from .entity import VirtualEntity, add_platform_entities
 from .transform import to_bool
 
 
@@ -18,10 +18,7 @@ async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
 ) -> None:
     """Create the virtual binary sensors of a virtual device."""
-    async_add_entities(
-        VirtualBinarySensor(entry, config)
-        for config in entity_configs(entry, Platform.BINARY_SENSOR)
-    )
+    add_platform_entities(entry, Platform.BINARY_SENSOR, VirtualBinarySensor, async_add_entities)
 
 
 class VirtualBinarySensor(VirtualEntity, BinarySensorEntity):

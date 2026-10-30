@@ -14,6 +14,7 @@ from custom_components.virtual_device.const import (
 )
 
 from .conftest import SetupDevice
+from .helpers import subentry_by_title
 
 ENTITY_ID = "button.heat_pump_reset"
 RESET = {
@@ -40,4 +41,5 @@ async def test_button_needs_no_source_and_is_grouped_under_the_device(
 
     entity = er.async_get(hass).async_get(ENTITY_ID)
     device = dr.async_get(hass).async_get(entity.device_id)
-    assert (DOMAIN, entry.entry_id) in device.identifiers
+    subentry = subentry_by_title(entry, "Heat pump")
+    assert (DOMAIN, subentry.subentry_id) in device.identifiers

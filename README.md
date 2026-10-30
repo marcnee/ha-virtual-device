@@ -21,16 +21,19 @@ folder and restart.
 
 ## Usage
 
-1. *Settings → Devices & services → Add integration → Virtual Device*, enter a device name.
-2. Click **Configure** on the new entry.
+1. *Settings → Devices & services → Add integration → Virtual Device*. This sets up the service
+   once; all virtual devices live under this single entry.
+2. Click **Add virtual device** on the entry and enter a device name.
 3. **Add entity from a source**: pick the source entity (and optional attribute and template).
    Type, name, unit, device class, number range and select options are suggested from it and can be
    changed. Or use **Add entity manually**: type and name first, then the source. Use this for
    buttons, which need no source.
-4. **Save and finish**. The device reloads and the entities appear under the virtual device.
+4. **Save and finish**. The entities appear under the new virtual device.
 
-Edit or remove entities the same way. Changes only apply after *Save and finish*. Removed
-entities are deleted from the entity registry. You can create as many virtual devices as you like.
+To change a device, open its menu on the entry and choose **Edit virtual device**; delete it there
+too. Changes only apply after *Save and finish*. Removed entities are deleted from the entity
+registry. You can add as many virtual devices as you like. Saving a change reloads the service
+briefly, so all virtual entities update at once.
 
 ## Entity types
 
