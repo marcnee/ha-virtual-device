@@ -72,3 +72,43 @@ async def test_icon_can_be_edited_and_removed(
     result = await choose(hass, result["flow_id"], "save")
 
     assert CONF_ICON not in saved_entities(entry)[0]
+
+
+async def test_icon_of_the_source_is_used_when_no_icon_is_configured(
+    hass: HomeAssistant, setup_device: SetupDevice
+) -> None:
+    hass.states.async_set(SOURCE, "on", {"icon": "mdi:thermometer"})
+
+    await setup_device([STATUS])
+
+    assert hass.states.get("sensor.heat_pump_status").attributes["icon"] == "mdi:thermometer"
+
+
+async def test_icon_follows_the_source(hass: HomeAssistant, setup_device: SetupDevice) -> None:
+    hass.states.async_set(SOURCE, "on", {"icon": "mdi:thermometer"})
+    await setup_device([STATUS])
+
+    hass.states.async_set(SOURCE, "on", {"icon": "mdi:fire"})
+    await hass.async_block_till_done()
+
+    assert hass.states.get("sensor.heat_pump_status").attributes["icon"] == "mdi:fire"
+
+
+async def test_configured_icon_wins_over_the_icon_of_the_source(
+    hass: HomeAssistant, setup_device: SetupDevice
+) -> None:
+    hass.states.async_set(SOURCE, "on", {"icon": "mdi:thermometer"})
+
+    await setup_device([{**STATUS, CONF_ICON: "mdi:heat-pump"}])
+
+    assert hass.states.get("sensor.heat_pump_status").attributes["icon"] == "mdi:heat-pump"
+
+
+async def test_without_any_icon_the_default_icon_stays(
+    hass: HomeAssistant, setup_device: SetupDevice
+) -> None:
+    hass.states.async_set(SOURCE, "on")
+
+    await setup_device([STATUS])
+
+    assert "icon" not in hass.states.get("sensor.heat_pump_status").attributes

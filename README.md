@@ -107,6 +107,10 @@ Every virtual entity shows where it comes from in its attributes:
 | `source_attribute` | The attribute it reads instead of the state (only if set) |
 | `forwards_commands` | `true` if at least one action is configured, so commands are forwarded |
 
+An entity with a source uses the source's icon unless you set an icon of its own. (Home Assistant
+only puts an icon into a state if it was customized; default icons of a type or device class are
+not copied.)
+
 The source forms also offer **Copy source attributes**: none (default), all, or selected
 attributes (enter their names). Copied attributes follow the source. Attributes Home Assistant
 sets itself (`friendly_name`, `icon`, `unit_of_measurement`, `device_class`, `state_class`,

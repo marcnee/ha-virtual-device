@@ -38,7 +38,7 @@
             "icon": "Icon"
           },
           "data_description": {
-            "icon": "Optional. Overrides the default icon."
+            "icon": "Optional. Without it the entity uses the icon of its source, if the source has one."
           }
         },
         "entity_source": {
