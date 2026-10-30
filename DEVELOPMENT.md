@@ -201,8 +201,7 @@ gh release create v0.1.0 virtual_device.zip --title v0.1.0 --notes-file release_
 ```
 
 Do this instead of pushing the tag, not in addition, or the workflow fails because the release
-exists. Without HACS, copy `custom_components/virtual_device` into `config/custom_components/` of
-the Home Assistant instance and restart.
+exists. How users install without HACS is described in the README.
 
 ## Changing the stored data
 

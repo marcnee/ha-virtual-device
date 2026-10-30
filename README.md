@@ -18,8 +18,29 @@ Requires Home Assistant 2026.10 or newer.
 **HACS:** add this repository as a custom repository (type *Integration*), install
 *Virtual Device*, restart Home Assistant.
 
-**Manual:** copy `custom_components/virtual_device` into your `config/custom_components/`
-folder and restart.
+**Manual:**
+
+1. Download `virtual_device.zip` from the
+   [latest release](https://github.com/marcnee/ha-virtual-device/releases/latest).
+2. Create the folder `config/custom_components/virtual_device` in your Home Assistant
+   configuration directory (the one with `configuration.yaml`). Create `custom_components` first
+   if it does not exist.
+3. Unpack the ZIP into that folder. The files (`manifest.json`, `__init__.py`, ...) have to be
+   directly in `virtual_device`, not in a further subfolder. For example:
+
+   ```sh
+   unzip virtual_device.zip -d config/custom_components/virtual_device
+   ```
+
+   With Home Assistant OS use the *Samba share*, *File editor* or *Studio Code Server* add-on
+   instead of the command line; in a container, put the folder into the volume mounted at
+   `/config`.
+4. Restart Home Assistant, then *Settings → Devices & services → Add integration → Virtual
+   Device*.
+
+To update, replace the files in the same folder with those of the new release and restart. If you
+prefer the source, copy the folder `custom_components/virtual_device` of this repository instead
+of the ZIP.
 
 ## Usage
 
