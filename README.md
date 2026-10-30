@@ -102,6 +102,11 @@ The optional template sees `value` (the source state, or the chosen attribute), 
 
 For two entities from one status, add two sensors with the same source and different templates.
 
+The form shows the current value of the source and what the templates make of it. Tick *Test the
+templates* and submit to see the result for what you just entered; the form stays open until you
+submit without it. Errors of a template are shown there instead of only in the log. Nothing is
+stored by the test.
+
 ## Forwarding commands
 
 When you add a switch, number or select whose source can be controlled that way, the action forms

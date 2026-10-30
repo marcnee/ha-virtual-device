@@ -44,20 +44,22 @@
         },
         "entity_source": {
           "title": "Source and transformation",
-          "description": "The source entity is never modified. The template can use `value` (state or attribute), `state` and `attributes`.\n\nExamples:\n- `'{{' value.split(' - ', 1)[-1] '}}'` turns \"18 - Running\" into \"Running\"\n- `'{{' value.split(' - ')[0] '}}'` returns just \"18\"\n- `'{{' value.startswith('18') '}}'` for a binary sensor",
+          "description": "The source entity is never modified. The template can use `value` (state or attribute), `state` and `attributes`.\n\nExamples:\n- `'{{' value.split(' - ', 1)[-1] '}}'` turns \"18 - Running\" into \"Running\"\n- `'{{' value.split(' - ')[0] '}}'` returns just \"18\"\n- `'{{' value.startswith('18') '}}'` for a binary sensor\n\n**Preview** with the current state of the source:\n- Value of the source: {source_value}\n- Result of the value template: {value_result}\n- Attribute templates: {attribute_results}",
           "data": {
             "source_entity": "Source entity",
             "source_attribute": "Source attribute",
             "value_template": "Value template",
             "copy_attributes": "Copy source attributes",
-            "attribute_templates": "Attribute templates"
+            "attribute_templates": "Attribute templates",
+            "test_template": "Test the templates"
           },
           "data_description": {
             "source_entity": "An entity of any integration.",
             "source_attribute": "Optional. Use this attribute instead of the state.",
             "value_template": "Optional. Transforms the value. Without it the value is used unchanged.",
             "copy_attributes": "Optional. Default: none. \"Selected attributes\" lets you pick them in the next step. Attributes that Home Assistant sets itself (name, icon, unit, classes) are never copied.",
-            "attribute_templates": "Optional, YAML: attribute name and template per line, for example `fehlercode: \"'{{' attributes.error_code | int '}}'\"`. Templates see `value`, `state` and `attributes`. A template overrides a copied attribute of the same name."
+            "attribute_templates": "Optional, YAML: attribute name and template per line, for example `fehlercode: \"'{{' attributes.error_code | int '}}'\"`. Templates see `value`, `state` and `attributes`. A template overrides a copied attribute of the same name.",
+            "test_template": "Shows the preview above for what you entered and keeps this form open. Submit again without it to continue."
           }
         },
         "entity_details": {
@@ -99,20 +101,22 @@
         },
         "add_from_source": {
           "title": "Choose the source",
-          "description": "Pick the entity to build on. Type, name, unit, range and options are suggested from it afterwards, you can change them. The source entity is never modified.\n\nExamples:\n- `'{{' value.split(' - ', 1)[-1] '}}'` turns \"18 - Running\" into \"Running\"\n- `'{{' value.split(' - ')[0] '}}'` returns just \"18\"\n- `'{{' value.startswith('18') '}}'` for a binary sensor",
+          "description": "Pick the entity to build on. Type, name, unit, range and options are suggested from it afterwards, you can change them. The source entity is never modified.\n\nExamples:\n- `'{{' value.split(' - ', 1)[-1] '}}'` turns \"18 - Running\" into \"Running\"\n- `'{{' value.split(' - ')[0] '}}'` returns just \"18\"\n- `'{{' value.startswith('18') '}}'` for a binary sensor\n\n**Preview** with the current state of the source:\n- Value of the source: {source_value}\n- Result of the value template: {value_result}\n- Attribute templates: {attribute_results}",
           "data": {
             "source_entity": "Source entity",
             "source_attribute": "Source attribute",
             "value_template": "Value template",
             "copy_attributes": "Copy source attributes",
-            "attribute_templates": "Attribute templates"
+            "attribute_templates": "Attribute templates",
+            "test_template": "Test the templates"
           },
           "data_description": {
             "source_entity": "An entity of any integration.",
             "source_attribute": "Optional. Use this attribute instead of the state.",
             "value_template": "Optional. Transforms the value. Without it the value is used unchanged.",
             "copy_attributes": "Optional. Default: none. \"Selected attributes\" lets you pick them in the next step. Attributes that Home Assistant sets itself (name, icon, unit, classes) are never copied.",
-            "attribute_templates": "Optional, YAML: attribute name and template per line, for example `fehlercode: \"'{{' attributes.error_code | int '}}'\"`. Templates see `value`, `state` and `attributes`. A template overrides a copied attribute of the same name."
+            "attribute_templates": "Optional, YAML: attribute name and template per line, for example `fehlercode: \"'{{' attributes.error_code | int '}}'\"`. Templates see `value`, `state` and `attributes`. A template overrides a copied attribute of the same name.",
+            "test_template": "Shows the preview above for what you entered and keeps this form open. Submit again without it to continue."
           }
         },
         "user": {

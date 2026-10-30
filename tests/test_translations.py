@@ -17,6 +17,7 @@ SOURCE_FIELDS = [
     "value_template",
     "copy_attributes",
     "attribute_templates",
+    "test_template",
 ]
 OPTION_FIELDS = {
     "add_from_source": SOURCE_FIELDS,
@@ -109,10 +110,14 @@ def test_curly_braces_are_escaped_for_the_ui() -> None:
     """The UI formats texts as ICU messages: a literal brace must be written as '{' or '}'.
 
     Only the placeholders the flows fill in ({attribute}, {error}, {device}, {entity},
-    {source}) are left as they are.
+    {source}, {source_value}, {value_result}, {attribute_results}) are left as they are.
     """
     for text in _texts(STRINGS):
-        unescaped = re.sub(r"'[{}]+'|\{(?:attribute|error|device|entity|source)\}", "", text)
+        unescaped = re.sub(
+            r"'[{}]+'|\{(?:attribute|error|device|entity|source|source_value|value_result|attribute_results)\}",
+            "",
+            text,
+        )
         assert "{" not in unescaped, text
         assert "}" not in unescaped, text
 
@@ -145,3 +150,11 @@ def test_source_missing_texts_use_only_the_placeholders_of_the_issue() -> None:
 def test_the_device_class_text_covers_binary_sensors() -> None:
     text = DEVICE["step"]["entity_details"]["data_description"]["device_class"]
     assert "binary" in text.lower()
+
+
+@pytest.mark.parametrize("step", ["entity_source", "add_from_source"])
+def test_the_source_forms_show_the_preview_of_the_templates(step: str) -> None:
+    texts = DEVICE["step"][step]
+    for placeholder in ("source_value", "value_result", "attribute_results"):
+        assert "{" + placeholder + "}" in texts["description"]
+    assert texts["data_description"]["test_template"]

@@ -7,6 +7,9 @@ Changes that need action from users go under `### Breaking` at the top of their 
 ## [Unreleased]
 
 ### Added
+- The forms for the source show the current value of the source and, with *Test the templates*,
+  what the value template and the attribute templates make of it, including their errors,
+  before anything is saved.
 - Binary sensors can have a device class (door, motion, ...), suggested from the source. Binary
   sensors you already have stay as they are; adding or editing one shows a new *Details* form.
 - A repair issue appears when the source of a virtual entity does not exist (deleted or removed),

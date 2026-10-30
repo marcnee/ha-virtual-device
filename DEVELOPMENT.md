@@ -145,6 +145,9 @@ start with an empty `dev/config`)
 - [ ] Switch and number from a controllable source: the actions are prefilled and really control
       the source (check the source changes, not only the virtual entity)
 - [ ] Select with a mapping action and a button with an action
+- [ ] *Test the templates* in the source form shows the value of the source and the result of a
+      template, also an error for a broken one, and stores nothing
+- [ ] A binary sensor has a device class that shows in its states (for example door: open/closed)
 - [ ] *Selected attributes* lists the attributes of the source; copied attributes and attribute
       templates show up and follow the source; invalid templates show an error in the form
 - [ ] The icon of the source is used; an own icon wins
