@@ -47,12 +47,16 @@
           "data": {
             "source_entity": "Source entity",
             "source_attribute": "Source attribute",
-            "value_template": "Value template"
+            "value_template": "Value template",
+            "copy_attributes": "Copy source attributes",
+            "attribute_names": "Attributes to copy"
           },
           "data_description": {
             "source_entity": "An entity of any integration.",
             "source_attribute": "Optional. Use this attribute instead of the state.",
-            "value_template": "Optional. Transforms the value. Without it the value is used unchanged."
+            "value_template": "Optional. Transforms the value. Without it the value is used unchanged.",
+            "copy_attributes": "Optional. Default: none. Attributes that Home Assistant sets itself (name, icon, unit, classes) are never copied.",
+            "attribute_names": "Only used for \"selected attributes\". One attribute name per entry."
           }
         },
         "entity_details": {
@@ -98,12 +102,16 @@
           "data": {
             "source_entity": "Source entity",
             "source_attribute": "Source attribute",
-            "value_template": "Value template"
+            "value_template": "Value template",
+            "copy_attributes": "Copy source attributes",
+            "attribute_names": "Attributes to copy"
           },
           "data_description": {
             "source_entity": "An entity of any integration.",
             "source_attribute": "Optional. Use this attribute instead of the state.",
-            "value_template": "Optional. Transforms the value. Without it the value is used unchanged."
+            "value_template": "Optional. Transforms the value. Without it the value is used unchanged.",
+            "copy_attributes": "Optional. Default: none. Attributes that Home Assistant sets itself (name, icon, unit, classes) are never copied.",
+            "attribute_names": "Only used for \"selected attributes\". One attribute name per entry."
           }
         },
         "user": {
@@ -116,7 +124,8 @@
       },
       "error": {
         "min_greater_max": "The maximum must be greater than the minimum.",
-        "options_required": "Provide at least one option."
+        "options_required": "Provide at least one option.",
+        "attribute_names_required": "Enter at least one attribute name."
       },
       "abort": {
         "reconfigure_successful": "The virtual device was saved."
@@ -132,6 +141,13 @@
         "number": "Number (settable)",
         "select": "Select",
         "button": "Button"
+      }
+    },
+    "copy_attributes": {
+      "options": {
+        "none": "None",
+        "all": "All attributes",
+        "selected": "Selected attributes"
       }
     }
   }

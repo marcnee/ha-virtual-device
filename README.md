@@ -97,6 +97,22 @@ Passing a number through unchanged:
 Switches, numbers and selects do not change their own state after a command. They follow the
 source, so the state you see is the one the device really reports.
 
+## Attributes and where an entity is wired to
+
+Every virtual entity shows where it comes from in its attributes:
+
+| Attribute | Meaning |
+|---|---|
+| `source_entity` | The entity it follows |
+| `source_attribute` | The attribute it reads instead of the state (only if set) |
+| `forwards_commands` | `true` if at least one action is configured, so commands are forwarded |
+
+The source forms also offer **Copy source attributes**: none (default), all, or selected
+attributes (enter their names). Copied attributes follow the source. Attributes Home Assistant
+sets itself (`friendly_name`, `icon`, `unit_of_measurement`, `device_class`, `state_class`,
+`entity_picture`, `supported_features`, `options`, `min`, `max`, `step`, `mode`) and the three
+attributes above are never copied.
+
 ## Limitations (see ROADMAP.md)
 
 - Only English texts for now.

@@ -11,6 +11,7 @@ Done
 - [x] Sensor options: unit, device class, state class
 - [x] Suggested settings from the source entity (name, type, unit, classes, range, options)
 - [x] Optional icon per virtual entity
+- [x] Copy source attributes (none, all, selected) and mark the source (`source_entity`, `forwards_commands`)
 - [x] A broken action only disables that command
 - [x] English translations
 - [x] Release workflow (GitHub release + ZIP for HACS)

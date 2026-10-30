@@ -6,15 +6,22 @@ from pathlib import Path
 
 import pytest
 
-from custom_components.virtual_device.const import PLATFORMS
+from custom_components.virtual_device.const import COPY_MODES, PLATFORMS
 
 EN_JSON = Path(__file__).parents[1] / "custom_components/virtual_device/translations/en.json"
 STRINGS = json.loads(EN_JSON.read_text())
 
+SOURCE_FIELDS = [
+    "source_entity",
+    "source_attribute",
+    "value_template",
+    "copy_attributes",
+    "attribute_names",
+]
 OPTION_FIELDS = {
-    "add_from_source": ["source_entity", "source_attribute", "value_template"],
+    "add_from_source": SOURCE_FIELDS,
     "add_entity": ["platform", "name", "icon"],
-    "entity_source": ["source_entity", "source_attribute", "value_template"],
+    "entity_source": SOURCE_FIELDS,
     "entity_details": [
         "min_value",
         "max_value",
@@ -72,7 +79,9 @@ def test_device_step_texts(step: str, fields: list[str]) -> None:
 
 
 def test_error_texts() -> None:
-    assert {"min_greater_max", "options_required"} <= set(DEVICE["error"])
+    assert {"min_greater_max", "options_required", "attribute_names_required"} <= set(
+        DEVICE["error"]
+    )
 
 
 def test_every_platform_has_a_label() -> None:
@@ -94,3 +103,8 @@ def test_curly_braces_are_escaped_for_the_ui() -> None:
         unescaped = re.sub(r"'[{}]+'", "", text)
         assert "{" not in unescaped, text
         assert "}" not in unescaped, text
+
+
+def test_every_copy_mode_has_a_label() -> None:
+    labels = STRINGS["selector"]["copy_attributes"]["options"]
+    assert set(COPY_MODES) <= set(labels)
