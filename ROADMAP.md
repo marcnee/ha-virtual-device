@@ -30,8 +30,16 @@ Next (test first)
   - light (on/off, brightness, colour temperature, colour)
   - climate (mode, target temperature, presets), the largest one
   - later: water heater, humidifier, siren, vacuum, media player, date/time/text inputs
-  Open question before starting: one generic "mirror the source and forward every service call"
-  mode, or a hand-built form per type.
+  Open question before starting, two ways to build such a type (example: a virtual light):
+  - *Mirror*: pick a `light` as source. The virtual light copies its state, brightness, colours
+    and supported features and passes every service call (`light.turn_on` with brightness, colour
+    ...) on to the source unchanged. Little to configure and new features come for free, but it
+    only works between entities of the same kind and values cannot be converted per feature.
+  - *Assemble*: the virtual light is built from parts of your choice, e.g. brightness from a
+    number entity, on/off from a switch, converted with templates, and one action per command.
+    Full control and works across integrations (the core idea of this project), but it needs a
+    long form per type and a lot more code and tests.
+  Possible order: mirror first for the simple clone case, assemble per type later.
 - [ ] Try it in a real Home Assistant (`docker compose --profile dev up homeassistant`) and fix findings
 - [ ] German translation
 - [ ] Diagnostics and repair issues (e.g. source entity missing)
