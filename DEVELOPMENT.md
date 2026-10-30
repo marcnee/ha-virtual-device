@@ -50,6 +50,26 @@ integration → Virtual Device*, then *Add virtual device* on the entry. The int
 mounted, so after a code change run `docker compose restart homeassistant`. `dev/` is not tracked
 by git.
 
+## VS Code
+
+`.vscode/` is part of the repository (recommended extensions: Python, Python Debugger, Ruff).
+Create the venv from "Tests (TDD)" as `.venv`; VS Code picks it up.
+
+**Tasks** (*Terminal → Run Task*): `Check: ...` run `scripts/check.sh` or a single check,
+`Local: tests`, `Local: lint` and `Local: format` work in the venv without Docker.
+
+**Debugging** (*Run and Debug*):
+
+| Configuration | What it does |
+|---|---|
+| `Tests: all`, `Tests: current file` | Runs pytest in the venv under the debugger |
+| `Attach: tests in Docker` | Run the task `Docker: debug tests (then attach)` first (it asks for pytest options, for example `-k sensor`); the tests wait until the debugger is attached |
+| `Attach: Home Assistant in Docker` | Run the task `Docker: Home Assistant with debugger (then attach)` first, then attach on port 5679. Breakpoints in `custom_components/virtual_device` work; to stop in the setup, attach and then reload the integration or restart the container |
+
+The two Docker sessions use `test-debug` and `homeassistant-debug` in `compose.yaml`
+(`Dockerfile.dev` adds the debugger to the Home Assistant image). Both run on the same ports as
+their normal counterparts, so do not start the normal `homeassistant` at the same time.
+
 ## Code layout
 
 Pure logic is kept apart from Home Assistant glue, and each has its own test file.

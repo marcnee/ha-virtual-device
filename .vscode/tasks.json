@@ -1,0 +1,92 @@
+{
+    "version": "2.0.0",
+    "inputs": [
+        {
+            "id": "pytestArgs",
+            "type": "promptString",
+            "description": "pytest options, empty runs all tests (for example: -k sensor)",
+            "default": ""
+        }
+    ],
+    "tasks": [
+        {
+            "label": "Check: all",
+            "type": "shell",
+            "command": "scripts/check.sh",
+            "problemMatcher": []
+        },
+        {
+            "label": "Check: lint",
+            "type": "shell",
+            "command": "scripts/check.sh lint",
+            "problemMatcher": []
+        },
+        {
+            "label": "Check: tests",
+            "type": "shell",
+            "command": "scripts/check.sh test",
+            "problemMatcher": []
+        },
+        {
+            "label": "Check: hassfest",
+            "type": "shell",
+            "command": "scripts/check.sh hassfest",
+            "problemMatcher": []
+        },
+        {
+            "label": "Check: newest Home Assistant",
+            "type": "shell",
+            "command": "scripts/check.sh test-latest",
+            "problemMatcher": []
+        },
+        {
+            "label": "Check: Home Assistant beta",
+            "type": "shell",
+            "command": "scripts/check.sh test-beta",
+            "problemMatcher": []
+        },
+        {
+            "label": "Local: tests",
+            "type": "shell",
+            "command": ".venv/bin/python -m pytest",
+            "problemMatcher": [],
+            "group": {
+                "kind": "test",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "Local: lint",
+            "type": "shell",
+            "command": ".venv/bin/ruff check . && .venv/bin/ruff format --check .",
+            "problemMatcher": []
+        },
+        {
+            "label": "Local: format",
+            "type": "shell",
+            "command": ".venv/bin/ruff format .",
+            "problemMatcher": []
+        },
+        {
+            "label": "Docker: debug tests (then attach)",
+            "type": "shell",
+            "command": "docker compose run --rm --service-ports test-debug ${input:pytestArgs}",
+            "problemMatcher": [],
+            "isBackground": true
+        },
+        {
+            "label": "Docker: Home Assistant",
+            "type": "shell",
+            "command": "docker compose --profile dev up homeassistant",
+            "problemMatcher": [],
+            "isBackground": true
+        },
+        {
+            "label": "Docker: Home Assistant with debugger (then attach)",
+            "type": "shell",
+            "command": "docker compose --profile dev up homeassistant-debug",
+            "problemMatcher": [],
+            "isBackground": true
+        }
+    ]
+}

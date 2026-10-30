@@ -17,7 +17,7 @@ it creates new ones grouped under the virtual device.
 ## Target versions
 
 Home Assistant **2026.10.4**, Python **3.14**. Versions are pinned in `requirements_test.txt`
-and CI. When bumping, update `requirements_test.txt`, `hacs.json`, `compose.yaml`, `Dockerfile.test`,
+and CI. When bumping, update `requirements_test.txt`, `hacs.json`, `compose.yaml`, `Dockerfile.test`, `Dockerfile.dev`,
 `.github/workflows/ci.yaml` and DEVELOPMENT.md together.
 
 ## Releases and stored data
@@ -61,6 +61,8 @@ Run `ruff format .` and the tests before every commit.
 - `CHANGELOG.md` release notes, `scripts/` helper scripts (all checks, release notes, brand images)
 - `.github/workflows/` CI, hassfest, HACS validation (`validate.yaml`), release and `ha-compat`
   (newer Home Assistant versions)
+- `.vscode/` launch configurations (debug tests, attach to Docker) and tasks; keep them matching
+  `compose.yaml` and `scripts/check.sh` (`tests/test_vscode.py` checks this)
 - `DEVELOPMENT.md` how to test and try it, `ROADMAP.md` planned work
 
 ## Commits

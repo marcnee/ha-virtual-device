@@ -1,0 +1,3 @@
+# Home Assistant dev instance with a debugger: same version as the "homeassistant" service.
+FROM ghcr.io/home-assistant/home-assistant:2026.10.4
+RUN pip install --no-cache-dir debugpy

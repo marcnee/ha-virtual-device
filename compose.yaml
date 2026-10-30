@@ -1,9 +1,29 @@
+# What both Home Assistant dev services share.
+x-dev-instance: &dev-instance
+  profiles: ["dev"]
+  volumes:
+    - ./dev/config:/config
+    - ./custom_components/virtual_device:/config/custom_components/virtual_device
+  restart: unless-stopped
+
 services:
   # docker compose run --rm test [pytest options]
   test:
     build:
       context: .
       dockerfile: Dockerfile.test
+    volumes:
+      - .:/app
+
+  # Tests that wait for the VS Code debugger ("Attach: tests in Docker", port 5678):
+  # docker compose run --rm --service-ports test-debug [pytest options]
+  test-debug:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    entrypoint: ["python", "-m", "debugpy", "--listen", "0.0.0.0:5678", "--wait-for-client", "-m", "pytest"]
+    ports:
+      - "5678:5678"
     volumes:
       - .:/app
 
@@ -45,11 +65,20 @@ services:
 
   # docker compose --profile dev up homeassistant   ->  http://localhost:8123
   homeassistant:
-    profiles: ["dev"]
+    <<: *dev-instance
     image: ghcr.io/home-assistant/home-assistant:2026.10.4
     ports:
       - "8123:8123"
-    volumes:
-      - ./dev/config:/config
-      - ./custom_components/virtual_device:/config/custom_components/virtual_device
-    restart: unless-stopped
+
+  # The same with a debugger for VS Code ("Attach: Home Assistant in Docker", port 5679):
+  # docker compose --profile dev up homeassistant-debug
+  homeassistant-debug:
+    <<: *dev-instance
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    entrypoint:
+      ["python3", "-m", "debugpy", "--listen", "0.0.0.0:5679", "-m", "homeassistant", "--config", "/config"]
+    ports:
+      - "8123:8123"
+      - "5679:5679"
