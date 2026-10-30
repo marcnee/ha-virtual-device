@@ -46,6 +46,15 @@ services:
     volumes:
       - .:/app
 
+  # Prints the CHANGELOG section of a version, for machines without Python:
+  # docker compose run --rm -T release-notes 0.1.0 > release_notes.md
+  release-notes:
+    image: python:3.14-slim
+    working_dir: /app
+    entrypoint: ["python", "scripts/release_notes.py"]
+    volumes:
+      - .:/app
+
   # Home Assistant's own checks of manifest.json and translations, the same image the GitHub
   # action hassfest runs: docker compose run --rm hassfest
   hassfest:

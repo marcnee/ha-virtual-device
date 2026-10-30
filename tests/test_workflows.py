@@ -67,3 +67,23 @@ def test_hacs_validation_runs_for_an_integration_on_push_schedule_and_demand() -
 
 def test_hacs_validation_gets_no_token_permissions() -> None:
     assert "permissions: {}" in VALIDATE
+
+
+def test_release_notes_can_be_printed_without_python_on_the_machine() -> None:
+    service = COMPOSE["release-notes"]
+    from_line = next(
+        line
+        for line in (ROOT / "Dockerfile.test").read_text().splitlines()
+        if line.startswith("FROM ")
+    )
+    base_image = from_line.removeprefix("FROM ")
+    assert service["image"] == base_image
+    assert service["entrypoint"] == ["python", "scripts/release_notes.py"]
+    assert service["working_dir"] == "/app"
+    assert ".:/app" in service["volumes"]
+
+
+def test_the_manual_release_steps_use_that_service() -> None:
+    development = (ROOT / "DEVELOPMENT.md").read_text()
+    assert "docker compose run --rm -T release-notes 0.1.0 > release_notes.md" in development
+    assert "python3 scripts/release_notes.py" not in development

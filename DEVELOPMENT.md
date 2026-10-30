@@ -184,11 +184,12 @@ generated notes are not used: they only list merged pull requests.)
 
 ### Building a release by hand
 
-The workflow does this on GitHub; the same steps work locally (the `gh` CLI must be logged in).
-The first line writes the release notes to a file, so you can read them before publishing:
+The workflow does this on GitHub; the same steps work locally (the `gh` CLI must be logged in,
+`zip` must be installed). Python is not needed on your machine: the first line runs the script in
+Docker and writes the release notes to a file, so you can read them before publishing:
 
 ```sh
-python3 scripts/release_notes.py 0.1.0 > release_notes.md
+docker compose run --rm -T release-notes 0.1.0 > release_notes.md
 (cd custom_components/virtual_device && zip -r ../../virtual_device.zip . -x "__pycache__/*")
 gh release create v0.1.0 virtual_device.zip --title v0.1.0 --notes-file release_notes.md
 ```
