@@ -28,6 +28,11 @@ from .const import (
 from .transform import ValueTransformer
 
 
+def make_unique_id(entry_id: str, config_id: str) -> str:
+    """The unique ID of a virtual entity."""
+    return f"{entry_id}_{config_id}"
+
+
 def entity_configs(entry: ConfigEntry, platform: Platform) -> list[dict[str, Any]]:
     """The virtual entity definitions of one platform."""
     return [c for c in entry.options[CONF_ENTITIES] if c[CONF_PLATFORM] == platform]
@@ -46,7 +51,7 @@ class VirtualEntity(Entity):
         self._transform: ValueTransformer | None = None
         self._actions: dict[str, ActionRunner] = {}
         self._attr_name = config[CONF_NAME]
-        self._attr_unique_id = f"{entry.entry_id}_{config[CONF_ID]}"
+        self._attr_unique_id = make_unique_id(entry.entry_id, config[CONF_ID])
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, entry.entry_id)},
             name=entry.data[CONF_DEVICE_NAME],
