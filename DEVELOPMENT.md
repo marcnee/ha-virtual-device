@@ -79,7 +79,10 @@ use a fake Home Assistant and never see the real UI.
 - [ ] `docker compose run --rm lint` and `docker compose run --rm test`
 - [ ] `docker compose run --rm hassfest`
 - [ ] `docker compose run --rm test-latest` (newest Home Assistant); the beta is informational
-- [ ] GitHub: CI, Hassfest and the `ha-compat` workflow are green for the commit to be tagged
+- [ ] GitHub: CI, Hassfest, HACS validation and the `ha-compat` workflow are green for the commit
+      to be tagged
+- [ ] The GitHub repository has a description and topics (`home-assistant`, `hacs`, `integration`)
+      and issues enabled; HACS validation checks this
 
 **Manual check in a real Home Assistant** (`docker compose --profile dev up homeassistant`,
 start with an empty `dev/config`)

@@ -53,7 +53,8 @@ Run `ruff format .` and the tests before every commit.
   - `brand/` icon PNGs; render them from `assets/icon.svg` with `scripts/render_brand.py`.
 - `tests/` pytest tests, one file per module
 - `CHANGELOG.md` release notes, `scripts/` helper scripts (release notes, brand images)
-- `.github/workflows/` CI, hassfest, release and `ha-compat` (newer Home Assistant versions)
+- `.github/workflows/` CI, hassfest, HACS validation (`validate.yaml`), release and `ha-compat`
+  (newer Home Assistant versions)
 - `DEVELOPMENT.md` how to test and try it, `ROADMAP.md` planned work
 
 ## Commits

@@ -51,3 +51,17 @@ def test_compose_runs_hassfest_like_the_github_action() -> None:
     hassfest = COMPOSE["hassfest"]
     assert hassfest["image"] == "ghcr.io/home-assistant/hassfest"
     assert hassfest["volumes"] == [".:/github/workspace"]
+
+
+VALIDATE = (ROOT / ".github/workflows/validate.yaml").read_text()
+
+
+def test_hacs_validation_runs_for_an_integration_on_push_schedule_and_demand() -> None:
+    assert "uses: hacs/action@main" in VALIDATE
+    assert 'category: "integration"' in VALIDATE
+    for trigger in ("push:", "schedule:", "workflow_dispatch:"):
+        assert trigger in VALIDATE
+
+
+def test_hacs_validation_gets_no_token_permissions() -> None:
+    assert "permissions: {}" in VALIDATE

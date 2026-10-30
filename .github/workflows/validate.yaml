@@ -1,0 +1,23 @@
+name: HACS validation
+
+# HACS's own checks of the repository: hacs.json, README, license, description, topics, issues
+# enabled, brand images. The GitHub repository needs a description and topics (for example
+# home-assistant, hacs, integration), see DEVELOPMENT.md.
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: "0 0 * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  validate-hacs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: hacs/action@main
+        with:
+          category: "integration"
+          # The README has no screenshots yet. Remove this once it has some.
+          ignore: "images"
