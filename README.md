@@ -34,7 +34,7 @@ entities are deleted from the entity registry. You can create as many virtual de
 
 | Type | Shows | Commands |
 |---|---|---|
-| Sensor | Text or value of the source | none |
+| Sensor | Text or value of the source, optional unit and classes | none |
 | Binary sensor | on/off derived from the source | none |
 | Switch | on/off derived from the source | actions for turn on / turn off |
 | Number | Number with min, max, step and unit | action with `{{ value }}` |
@@ -46,6 +46,9 @@ is unknown, has no such attribute or the template fails or returns nothing.
 
 Binary sensors and switches treat the (transformed) value `on`, `true`, `1` and `yes` as on and
 everything else as off. Use a template for other conventions.
+
+If a sensor has a unit, device class or state class, its value must be numeric (Home Assistant
+requires it). Non-numeric values show as *unknown* and are logged. Leave those fields empty for text.
 
 ## Transforming values
 
@@ -91,5 +94,4 @@ source, so the state you see is the one the device really reports.
 
 ## Limitations (see ROADMAP.md)
 
-- Sensors have no unit, device class or state class options yet.
 - Only English texts for now.
