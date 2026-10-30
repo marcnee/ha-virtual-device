@@ -3,17 +3,15 @@
 from __future__ import annotations
 
 import logging
-from collections.abc import Callable
 from typing import Any
 
 import voluptuous as vol
-from homeassistant.config_entries import ConfigEntry, ConfigSubentry
-from homeassistant.const import STATE_UNAVAILABLE, STATE_UNKNOWN, Platform
+from homeassistant.config_entries import ConfigSubentry
+from homeassistant.const import STATE_UNAVAILABLE, STATE_UNKNOWN
 from homeassistant.core import Event, EventStateChangedData, State, callback
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity import Entity
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.event import async_track_state_change_event
 
 from .actions import ActionRunner
@@ -23,16 +21,13 @@ from .const import (
     ATTR_FORWARDS_COMMANDS,
     ATTR_SOURCE_ATTRIBUTE,
     ATTR_SOURCE_ENTITY,
-    CONF_ENTITIES,
     CONF_ICON,
     CONF_ID,
     CONF_NAME,
-    CONF_PLATFORM,
     CONF_SOURCE_ATTRIBUTE,
     CONF_SOURCE_ENTITY,
     CONF_VALUE_TEMPLATE,
     DOMAIN,
-    SUBENTRY_TYPE_DEVICE,
 )
 from .transform import ValueTransformer
 
@@ -42,26 +37,6 @@ _LOGGER = logging.getLogger(__name__)
 def make_unique_id(subentry_id: str, config_id: str) -> str:
     """The unique ID of a virtual entity."""
     return f"{subentry_id}_{config_id}"
-
-
-def entity_configs(subentry: ConfigSubentry, platform: Platform) -> list[dict[str, Any]]:
-    """The virtual entity definitions of one platform in a virtual device."""
-    return [c for c in subentry.data[CONF_ENTITIES] if c[CONF_PLATFORM] == platform]
-
-
-def add_platform_entities(
-    entry: ConfigEntry,
-    platform: Platform,
-    factory: Callable[[ConfigSubentry, dict[str, Any]], VirtualEntity],
-    async_add_entities: AddEntitiesCallback,
-) -> None:
-    """Create the entities of one platform for every virtual device of the service."""
-    for subentry in entry.subentries.values():
-        if subentry.subentry_type != SUBENTRY_TYPE_DEVICE:
-            continue
-        entities = [factory(subentry, config) for config in entity_configs(subentry, platform)]
-        if entities:
-            async_add_entities(entities, config_subentry_id=subentry.subentry_id)
 
 
 class VirtualEntity(Entity):

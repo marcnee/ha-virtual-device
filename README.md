@@ -32,8 +32,8 @@ folder and restart.
 
 To change a device, open its menu on the entry and choose **Edit virtual device**; delete it there
 too. Changes only apply after *Save and finish*. Removed entities are deleted from the entity
-registry. You can add as many virtual devices as you like. Saving a change reloads the service
-briefly, so all virtual entities update at once.
+registry. You can add as many virtual devices as you like. Saving a change does not reload the
+service: only the entities you changed are restarted, all other entities and devices keep running.
 
 ## Entity types
 

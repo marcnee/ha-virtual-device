@@ -6,22 +6,23 @@ import logging
 from typing import Any
 
 from homeassistant.components.sensor import SensorEntity
-from homeassistant.config_entries import ConfigEntry, ConfigSubentry
+from homeassistant.config_entries import ConfigSubentry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import CONF_DEVICE_CLASS, CONF_STATE_CLASS, CONF_UNIT
-from .entity import VirtualEntity, add_platform_entities
+from .entity import VirtualEntity
+from .manager import VirtualDeviceConfigEntry
 
 _LOGGER = logging.getLogger(__name__)
 
 
 async def async_setup_entry(
-    hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
+    hass: HomeAssistant, entry: VirtualDeviceConfigEntry, async_add_entities: AddEntitiesCallback
 ) -> None:
     """Create the virtual sensors of a virtual device."""
-    add_platform_entities(entry, Platform.SENSOR, VirtualSensor, async_add_entities)
+    await entry.runtime_data.async_register_platform(Platform.SENSOR, VirtualSensor)
 
 
 class VirtualSensor(VirtualEntity, SensorEntity):
