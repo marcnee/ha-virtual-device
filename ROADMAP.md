@@ -19,6 +19,8 @@ Done
 - [x] Changes only restart the changed entities (no reload of the service)
 - [x] A broken action only disables that command
 - [x] Integration icon (`brand/`)
+- [x] Migration framework for stored data, release notes from `CHANGELOG.md`
+- [x] Scheduled tests against the newest Home Assistant release and beta
 - [x] English translations
 - [x] Release workflow (GitHub release + ZIP for HACS)
 
