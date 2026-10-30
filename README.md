@@ -119,7 +119,7 @@ only puts an icon into a state if it was customized; default icons of a type or 
 not copied.)
 
 The source forms also offer **Copy source attributes**: none (default), all, or selected
-attributes (enter their names). Copied attributes follow the source. Attributes Home Assistant
+attributes (a next step offers the attributes the source has right now; you can also type names). Copied attributes follow the source. Attributes Home Assistant
 sets itself (`friendly_name`, `icon`, `unit_of_measurement`, `device_class`, `state_class`,
 `entity_picture`, `supported_features`, `options`, `min`, `max`, `step`, `mode`) and the three
 attributes above are never copied.

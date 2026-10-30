@@ -49,15 +49,13 @@
             "source_attribute": "Source attribute",
             "value_template": "Value template",
             "copy_attributes": "Copy source attributes",
-            "attribute_names": "Attributes to copy",
             "attribute_templates": "Attribute templates"
           },
           "data_description": {
             "source_entity": "An entity of any integration.",
             "source_attribute": "Optional. Use this attribute instead of the state.",
             "value_template": "Optional. Transforms the value. Without it the value is used unchanged.",
-            "copy_attributes": "Optional. Default: none. Attributes that Home Assistant sets itself (name, icon, unit, classes) are never copied.",
-            "attribute_names": "Only used for \"selected attributes\". One attribute name per entry.",
+            "copy_attributes": "Optional. Default: none. \"Selected attributes\" lets you pick them in the next step. Attributes that Home Assistant sets itself (name, icon, unit, classes) are never copied.",
             "attribute_templates": "Optional, YAML: attribute name and template per line, for example `fehlercode: \"'{{' attributes.error_code | int '}}'\"`. Templates see `value`, `state` and `attributes`. A template overrides a copied attribute of the same name."
           }
         },
@@ -106,15 +104,13 @@
             "source_attribute": "Source attribute",
             "value_template": "Value template",
             "copy_attributes": "Copy source attributes",
-            "attribute_names": "Attributes to copy",
             "attribute_templates": "Attribute templates"
           },
           "data_description": {
             "source_entity": "An entity of any integration.",
             "source_attribute": "Optional. Use this attribute instead of the state.",
             "value_template": "Optional. Transforms the value. Without it the value is used unchanged.",
-            "copy_attributes": "Optional. Default: none. Attributes that Home Assistant sets itself (name, icon, unit, classes) are never copied.",
-            "attribute_names": "Only used for \"selected attributes\". One attribute name per entry.",
+            "copy_attributes": "Optional. Default: none. \"Selected attributes\" lets you pick them in the next step. Attributes that Home Assistant sets itself (name, icon, unit, classes) are never copied.",
             "attribute_templates": "Optional, YAML: attribute name and template per line, for example `fehlercode: \"'{{' attributes.error_code | int '}}'\"`. Templates see `value`, `state` and `attributes`. A template overrides a copied attribute of the same name."
           }
         },
@@ -123,6 +119,13 @@
           "description": "Name the virtual device. Then add its entities.",
           "data": {
             "device_name": "Device name"
+          }
+        },
+        "select_attributes": {
+          "title": "Attributes to copy",
+          "description": "The attributes the source has right now are offered. You can also type the name of an attribute that does not exist yet.",
+          "data": {
+            "attribute_names": "Attributes to copy"
           }
         }
       },
