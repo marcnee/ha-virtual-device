@@ -17,6 +17,16 @@ runs ruff check and the format check. The commands in this document contain no t
 so they can be pasted as they are, also in zsh (which does not treat `#` as a comment in an
 interactive shell and would pass it to the command).
 
+To run all checks at once (lint, tests, hassfest, newest Home Assistant and beta):
+
+```sh
+scripts/check.sh
+```
+
+It prints a summary at the end. A failing check does not stop the others; the beta is
+informational and never fails the run. Pass names to run only some of them
+(`scripts/check.sh lint test`). It needs Docker, and the first run builds the images.
+
 Without Docker (Python 3.14 required):
 
 ```sh
@@ -80,9 +90,8 @@ use a fake Home Assistant and never see the real UI.
 - [ ] `hacs.json` minimum Home Assistant version still correct
 
 **Automatic checks, all green** (locally and on GitHub)
-- [ ] `docker compose run --rm lint` and `docker compose run --rm test`
-- [ ] `docker compose run --rm hassfest`
-- [ ] `docker compose run --rm test-latest` (newest Home Assistant); the beta is informational
+- [ ] `scripts/check.sh` (lint, test, hassfest and the newest Home Assistant; the beta is
+      informational)
 - [ ] GitHub: CI, Hassfest, HACS validation and the `ha-compat` workflow are green for the commit
       to be tagged
 - [ ] The GitHub repository has a description and topics (`home-assistant`, `hacs`, `integration`)
