@@ -6,8 +6,8 @@ Changes are collected in a working copy and only stored when "save" is chosen.
 from __future__ import annotations
 
 import uuid
-from collections.abc import Awaitable, Callable
 from copy import deepcopy
+from enum import Enum, auto
 from typing import Any
 
 import voluptuous as vol
@@ -64,6 +64,14 @@ _DEVICE_KEYS = (CONF_MANUFACTURER, CONF_MODEL)
 _SHARED_KEYS = {CONF_ID, CONF_ICON, *_SOURCE_KEYS}
 
 
+class _Mode(Enum):
+    """How the entity in the draft is being created or changed."""
+
+    ADD = auto()  # type and name first, then the source
+    ADD_FROM_SOURCE = auto()  # the source first; type and name are suggested from it
+    EDIT = auto()  # type and name first, then the source; all forms are prefilled
+
+
 class VirtualDeviceSubentryFlow(ConfigSubentryFlow):
     """Create a virtual device or manage its entities."""
 
@@ -72,13 +80,17 @@ class VirtualDeviceSubentryFlow(ConfigSubentryFlow):
         self._device: dict[str, str] | None = None
         self._entities: list[dict[str, Any]] | None = None
         self._draft: dict[str, Any] = {}
-        # True while a new entity is created (as opposed to edited): then values suggested by
-        # the source entity fill the forms.
-        self._adding = False
-        # True when the source was already asked for, in the "add from source" path.
-        self._source_done = False
-        # What follows the "select attributes" step.
-        self._proceed: Callable[[], Awaitable[SubentryFlowResult]] = self._show_basics
+        self._mode = _Mode.ADD
+
+    @property
+    def _adding(self) -> bool:
+        """A new entity is created (not edited): values suggested by the source fill the forms."""
+        return self._mode is not _Mode.EDIT
+
+    @property
+    def _source_first(self) -> bool:
+        """The source was asked for before type and name."""
+        return self._mode is _Mode.ADD_FROM_SOURCE
 
     @property
     def _device_settings(self) -> dict[str, str]:
@@ -210,8 +222,7 @@ class VirtualDeviceSubentryFlow(ConfigSubentryFlow):
         if user_input is not None:
             chosen = next(e for e in self._working_copy if e[CONF_ID] == user_input[CONF_PICK])
             self._draft = deepcopy(chosen)
-            self._adding = False
-            self._source_done = False
+            self._mode = _Mode.EDIT
             return self._show_basics_form()
         schema = vol.Schema(
             {
@@ -231,8 +242,7 @@ class VirtualDeviceSubentryFlow(ConfigSubentryFlow):
         """Platform and name."""
         if user_input is None:
             self._draft = {}
-            self._adding = True
-            self._source_done = False
+            self._mode = _Mode.ADD
             return self._show_basics_form()
         platform = user_input[CONF_PLATFORM]
         if self._draft.get(CONF_PLATFORM, platform) != platform:
@@ -246,8 +256,8 @@ class VirtualDeviceSubentryFlow(ConfigSubentryFlow):
             for key in _SOURCE_KEYS:
                 self._draft.pop(key, None)
             return await self.async_step_entity_details()
-        if self._source_done:
-            return await self._next_after_source()
+        if self._source_first:
+            return await self.async_step_entity_details()
         return await self.async_step_entity_source()
 
     async def async_step_add_from_source(
@@ -256,8 +266,7 @@ class VirtualDeviceSubentryFlow(ConfigSubentryFlow):
         """Start with the source; type and name are then suggested from it."""
         if user_input is None:
             self._draft = {}
-            self._adding = True
-            self._source_done = True
+            self._mode = _Mode.ADD_FROM_SOURCE
             return self._show_source_form("add_from_source")
         errors, placeholders = validate_source(self.hass, user_input)
         if errors:
@@ -266,7 +275,7 @@ class VirtualDeviceSubentryFlow(ConfigSubentryFlow):
         self._take_source(user_input)
         suggestions = defaults_from_source(self.hass.states.get(user_input[CONF_SOURCE_ENTITY]))
         self._draft |= {k: v for k, v in suggestions.items() if k in (CONF_NAME, CONF_PLATFORM)}
-        return await self._after_source_form(self._show_basics)
+        return await self._after_source_form()
 
     def _show_basics_form(self) -> SubentryFlowResult:
         return self.async_show_form(step_id="add_entity", data_schema=basics_schema(self._draft))
@@ -281,18 +290,21 @@ class VirtualDeviceSubentryFlow(ConfigSubentryFlow):
                 self._draft |= user_input
                 return self._show_source_form("entity_source", errors, placeholders)
             self._take_source(user_input)
-            return await self._after_source_form(self._next_after_source)
+            return await self._after_source_form()
         return self._show_source_form("entity_source")
 
-    async def _after_source_form(
-        self, proceed: Callable[[], Awaitable[SubentryFlowResult]]
-    ) -> SubentryFlowResult:
+    async def _after_source_form(self) -> SubentryFlowResult:
         """Ask for the attributes to copy if they are selected, then go on."""
         if self._draft.get(CONF_COPY_ATTRIBUTES) != COPY_SELECTED:
             self._draft.pop(CONF_ATTRIBUTE_NAMES, None)
-            return await proceed()
-        self._proceed = proceed
+            return await self._after_attributes()
         return await self.async_step_select_attributes()
+
+    async def _after_attributes(self) -> SubentryFlowResult:
+        """With the source first, type and name follow; otherwise the details."""
+        if self._source_first:
+            return self._show_basics_form()
+        return await self.async_step_entity_details()
 
     async def async_step_select_attributes(
         self, user_input: dict[str, Any] | None = None
@@ -302,15 +314,12 @@ class VirtualDeviceSubentryFlow(ConfigSubentryFlow):
         if user_input is not None:
             if user_input[CONF_ATTRIBUTE_NAMES]:
                 self._draft[CONF_ATTRIBUTE_NAMES] = user_input[CONF_ATTRIBUTE_NAMES]
-                return await self._proceed()
+                return await self._after_attributes()
             errors[CONF_ATTRIBUTE_NAMES] = "attribute_names_required"
         source = self.hass.states.get(self._draft.get(CONF_SOURCE_ENTITY, ""))
         offered = sorted(set(source.attributes) - RESERVED_ATTRIBUTES) if source else []
         schema = attributes_schema(self._draft, offered)
         return self.async_show_form(step_id="select_attributes", data_schema=schema, errors=errors)
-
-    async def _show_basics(self) -> SubentryFlowResult:
-        return self._show_basics_form()
 
     def _show_source_form(
         self,
@@ -333,9 +342,6 @@ class VirtualDeviceSubentryFlow(ConfigSubentryFlow):
         self._draft |= user_input
         if user_input.get(CONF_COPY_ATTRIBUTES) == COPY_SELECTED and names:
             self._draft[CONF_ATTRIBUTE_NAMES] = names  # shown again as the current choice
-
-    async def _next_after_source(self) -> SubentryFlowResult:
-        return await self.async_step_entity_details()
 
     async def async_step_entity_details(
         self, user_input: dict[str, Any] | None = None
