@@ -1,0 +1,97 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Create virtual device",
+        "description": "Name the virtual device. Add its entities afterwards via **Configure** on the integration entry.",
+        "data": {
+          "device_name": "Device name"
+        }
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Manage virtual device",
+        "description": "Changes only take effect after **Save and finish**.",
+        "menu_options": {
+          "add_entity": "Add entity",
+          "edit_entity": "Edit entity",
+          "remove_entity": "Remove entities",
+          "save": "Save and finish"
+        }
+      },
+      "add_entity": {
+        "title": "Type and name",
+        "description": "Any number of virtual entities can be built from the same source, for example a text and a number.",
+        "data": {
+          "platform": "Type",
+          "name": "Name"
+        }
+      },
+      "entity_source": {
+        "title": "Source and transformation",
+        "description": "The source entity is never modified. The template can use `value` (state or attribute), `state` and `attributes`.\n\nExamples:\n- `{{ value.split(' - ', 1)[-1] }}` turns \"18 - Running\" into \"Running\"\n- `{{ value.split(' - ')[0] }}` returns just \"18\"\n- `{{ value.startswith('18') }}` for a binary sensor",
+        "data": {
+          "source_entity": "Source entity",
+          "source_attribute": "Source attribute",
+          "value_template": "Value template"
+        },
+        "data_description": {
+          "source_entity": "An entity of any integration.",
+          "source_attribute": "Optional. Use this attribute instead of the state.",
+          "value_template": "Optional. Transforms the value. Without it the value is used unchanged."
+        }
+      },
+      "entity_details": {
+        "title": "Details",
+        "description": "Actions forward commands to the source integration. They can use `{{ value }}` (number), `{{ option }}` (select) and `{{ source_entity }}`.\n\nExample for a select: `{{ {'Running': 18, 'Standby': 19}[option] }}`",
+        "data": {
+          "min_value": "Minimum",
+          "max_value": "Maximum",
+          "step": "Step",
+          "unit_of_measurement": "Unit",
+          "options": "Options",
+          "action_on": "Action on turn on",
+          "action_off": "Action on turn off",
+          "action_set": "Action on set value",
+          "action_select": "Action on select option",
+          "action_press": "Action on press"
+        },
+        "data_description": {
+          "options": "The value (after the template) must match one option exactly."
+        }
+      },
+      "edit_entity": {
+        "title": "Edit entity",
+        "data": {
+          "virtual_entity": "Entity"
+        }
+      },
+      "remove_entity": {
+        "title": "Remove entities",
+        "description": "Only the virtual entities are deleted. The source entities stay untouched.",
+        "data": {
+          "virtual_entity": "Entities to remove"
+        }
+      }
+    },
+    "error": {
+      "min_greater_max": "The maximum must be greater than the minimum.",
+      "options_required": "Provide at least one option."
+    }
+  },
+  "selector": {
+    "platform": {
+      "options": {
+        "sensor": "Sensor (text or number)",
+        "binary_sensor": "Binary sensor (on/off)",
+        "switch": "Switch",
+        "number": "Number (settable)",
+        "select": "Select",
+        "button": "Button"
+      }
+    }
+  }
+}

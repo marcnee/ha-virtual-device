@@ -1,0 +1,59 @@
+"""Every step, field and error of the flows needs an English text."""
+
+import json
+from pathlib import Path
+
+import pytest
+
+from custom_components.virtual_device.const import PLATFORMS
+
+STRINGS = json.loads(
+    (Path(__file__).parents[1] / "custom_components/virtual_device/translations/en.json").read_text()
+)
+
+OPTION_FIELDS = {
+    "add_entity": ["platform", "name"],
+    "entity_source": ["source_entity", "source_attribute", "value_template"],
+    "entity_details": [
+        "min_value",
+        "max_value",
+        "step",
+        "unit_of_measurement",
+        "options",
+        "action_on",
+        "action_off",
+        "action_set",
+        "action_select",
+        "action_press",
+    ],
+    "edit_entity": ["virtual_entity"],
+    "remove_entity": ["virtual_entity"],
+}
+
+
+def test_config_flow_texts() -> None:
+    step = STRINGS["config"]["step"]["user"]
+    assert step["title"]
+    assert step["data"]["device_name"]
+
+
+def test_options_menu_texts() -> None:
+    init = STRINGS["options"]["step"]["init"]
+    assert init["title"]
+    assert set(init["menu_options"]) == {"add_entity", "edit_entity", "remove_entity", "save"}
+
+
+@pytest.mark.parametrize(("step", "fields"), OPTION_FIELDS.items())
+def test_options_step_texts(step: str, fields: list[str]) -> None:
+    texts = STRINGS["options"]["step"][step]
+    assert texts["title"]
+    assert set(fields) <= set(texts["data"])
+
+
+def test_error_texts() -> None:
+    assert {"min_greater_max", "options_required"} <= set(STRINGS["options"]["error"])
+
+
+def test_every_platform_has_a_label() -> None:
+    labels = STRINGS["selector"]["platform"]["options"]
+    assert {str(p) for p in PLATFORMS} <= set(labels)
