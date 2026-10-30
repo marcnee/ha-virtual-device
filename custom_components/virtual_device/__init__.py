@@ -54,11 +54,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: VirtualDeviceConfigEntry
     entry.async_on_unload(entry.add_update_listener(_async_apply_update))
     # Changes made while the platforms were still being set up.
     await entry.runtime_data.async_update()
+    entry.runtime_data.issues.start()
     return True
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: VirtualDeviceConfigEntry) -> bool:
     """Unload the service."""
+    entry.runtime_data.issues.stop()
     return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
 
 

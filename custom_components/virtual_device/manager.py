@@ -17,16 +17,16 @@ from homeassistant.helpers.entity_platform import EntityPlatform, async_get_curr
 
 from .changes import Definition, plan_changes
 from .const import (
-    CONF_ENTITIES,
     CONF_ID,
     CONF_MANUFACTURER,
     CONF_MODEL,
     CONF_PLATFORM,
-    SUBENTRY_TYPE_DEVICE,
 )
+from .definitions import entity_configs
 from .entity import VirtualEntity, make_unique_id
+from .missing_sources import EntityKey
+from .source_issues import SourceIssues
 
-type EntityKey = tuple[str, str]  # (subentry ID of the device, ID of the entity definition)
 type EntityFactory = Callable[[ConfigSubentry, dict[str, Any]], VirtualEntity]
 type VirtualDeviceConfigEntry = ConfigEntry[EntityManager]
 
@@ -46,13 +46,12 @@ class EntityManager:
         self._running: dict[EntityKey, Definition] = {}
         self._entities: dict[EntityKey, VirtualEntity] = {}
         self._lock = asyncio.Lock()
+        self.issues = SourceIssues(hass, entry)
 
     def _wanted(self) -> dict[EntityKey, Definition]:
         return {
-            (subentry.subentry_id, config[CONF_ID]): (_device_identity(subentry), config)
-            for subentry in self._entry.subentries.values()
-            if subentry.subentry_type == SUBENTRY_TYPE_DEVICE
-            for config in subentry.data[CONF_ENTITIES]
+            key: (_device_identity(self._entry.subentries[key[0]]), config)
+            for key, config in entity_configs(self._entry).items()
         }
 
     async def async_register_platform(self, platform: str, factory: EntityFactory) -> None:
@@ -79,6 +78,7 @@ class EntityManager:
                 await self._entities.pop(key).async_remove()
             self.remove_stale_registry_entries()
             await self._start(start, wanted)
+            self.issues.update()
 
     async def _start(self, keys: set[EntityKey], wanted: dict[EntityKey, Definition]) -> None:
         by_group: dict[tuple[str, str], list[VirtualEntity]] = {}
