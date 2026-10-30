@@ -7,9 +7,8 @@ import pytest
 
 from custom_components.virtual_device.const import PLATFORMS
 
-STRINGS = json.loads(
-    (Path(__file__).parents[1] / "custom_components/virtual_device/translations/en.json").read_text()
-)
+EN_JSON = Path(__file__).parents[1] / "custom_components/virtual_device/translations/en.json"
+STRINGS = json.loads(EN_JSON.read_text())
 
 OPTION_FIELDS = {
     "add_entity": ["platform", "name"],
