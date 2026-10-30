@@ -55,7 +55,13 @@ Pure logic is kept apart from Home Assistant glue, and each has its own test fil
 
 `custom_components/virtual_device/brand/` holds `icon.png` (256 px) and `icon@2x.png` (512 px).
 They are rendered from `assets/icon.svg`; after editing the SVG run
-`python scripts/render_brand.py` (needs Playwright with Chromium) and commit the PNGs.
+
+```sh
+pip install playwright && playwright install chromium
+python scripts/render_brand.py
+```
+
+and commit the PNGs.
 
 ## Release
 
@@ -75,6 +81,20 @@ HACS installs the `virtual_device.zip` attached to a GitHub release.
 The `Release` workflow runs the tests, checks that tag and manifest version match, builds the ZIP
 and creates the release with the CHANGELOG section of that version as its notes. (GitHub's
 generated notes are not used: they only list merged pull requests.)
+
+### Building a release by hand
+
+The workflow does this on GitHub; the same steps work locally (the `gh` CLI must be logged in):
+
+```sh
+python3 scripts/release_notes.py 0.1.0 > release_notes.md      # preview the notes
+(cd custom_components/virtual_device && zip -r ../../virtual_device.zip . -x "__pycache__/*")
+gh release create v0.1.0 virtual_device.zip --title v0.1.0 --notes-file release_notes.md
+```
+
+Do this instead of pushing the tag, not in addition, or the workflow fails because the release
+exists. Without HACS, copy `custom_components/virtual_device` into `config/custom_components/` of
+the Home Assistant instance and restart.
 
 ## Changing the stored data
 
@@ -97,3 +117,13 @@ CI uses the pinned version. `ha-compat.yaml` also runs the tests against the new
 release (twice a week and on demand) and informationally against the newest beta. When it fails,
 fix the incompatibility test-first, and bump the pinned version once the new release is supported
 (the places are listed in `CLAUDE.md`). Dependabot only updates the GitHub actions.
+
+To run the same check locally, use a separate environment so that the pinned one stays untouched:
+
+```sh
+python3.14 -m venv /tmp/compat && . /tmp/compat/bin/activate
+pip install pytest-homeassistant-custom-component      # newest release; add --pre for the beta
+python -m pytest
+```
+
+Hassfest (manifest and translation checks) only exists as a GitHub action; it runs on every push.
