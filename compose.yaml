@@ -7,6 +7,24 @@ services:
     volumes:
       - .:/app
 
+  # Same tests against the NEWEST Home Assistant release / beta (see Dockerfile.compat).
+  # docker compose build --no-cache test-latest && docker compose run --rm test-latest
+  test-latest:
+    build:
+      context: .
+      dockerfile: Dockerfile.compat
+    volumes:
+      - .:/app
+
+  test-beta:
+    build:
+      context: .
+      dockerfile: Dockerfile.compat
+      args:
+        PRE: "--pre"
+    volumes:
+      - .:/app
+
   # docker compose run --rm lint
   lint:
     build:

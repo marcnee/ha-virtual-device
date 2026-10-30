@@ -1,0 +1,10 @@
+# Compatibility image: the NEWEST Home Assistant (or beta with --build-arg PRE=--pre), not the
+# pinned one. Docker caches the install, so rebuild with --no-cache to get a newer release:
+#   docker compose build --no-cache test-latest && docker compose run --rm test-latest
+FROM python:3.14-slim
+ARG PRE=""
+WORKDIR /app
+# No pin: this package depends on exactly the matching Home Assistant release.
+RUN pip install --no-cache-dir $PRE pytest-homeassistant-custom-component
+# Show which versions are tested, then run pytest with the arguments given to the container.
+ENTRYPOINT ["sh", "-c", "pip list 2>/dev/null | grep -i -E '^(homeassistant|pytest-homeassistant-custom-component) '; exec python -m pytest \"$@\"", "sh"]

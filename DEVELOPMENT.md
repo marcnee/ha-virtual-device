@@ -118,7 +118,16 @@ release (twice a week and on demand) and informationally against the newest beta
 fix the incompatibility test-first, and bump the pinned version once the new release is supported
 (the places are listed in `CLAUDE.md`). Dependabot only updates the GitHub actions.
 
-To run the same check locally, use a separate environment so that the pinned one stays untouched:
+To run the same check locally with Docker:
+
+```sh
+docker compose build --no-cache test-latest && docker compose run --rm test-latest   # newest release
+docker compose build --no-cache test-beta   && docker compose run --rm test-beta     # newest beta
+```
+
+`--no-cache` matters: Docker would otherwise reuse the installed version of the last build. The
+run prints the Home Assistant version it tested. Without Docker, use a separate environment so
+that the pinned one stays untouched:
 
 ```sh
 python3.14 -m venv /tmp/compat && . /tmp/compat/bin/activate

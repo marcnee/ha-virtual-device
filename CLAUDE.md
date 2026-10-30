@@ -32,6 +32,7 @@ and CI. When bumping, update `requirements_test.txt`, `hacs.json`, `compose.yaml
 ```sh
 docker compose run --rm test        # pytest
 docker compose run --rm lint        # ruff check + ruff format --check
+docker compose run --rm test-latest # tests against the newest Home Assistant (see DEVELOPMENT.md)
 python -m pytest                    # without Docker (Python 3.14 venv)
 ruff check . && ruff format --check .
 ```
