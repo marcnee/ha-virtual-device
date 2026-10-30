@@ -13,64 +13,40 @@ from typing import Any
 import voluptuous as vol
 from homeassistant.config_entries import SOURCE_RECONFIGURE, ConfigSubentryFlow, SubentryFlowResult
 from homeassistant.const import Platform
-from homeassistant.core import HomeAssistant
-from homeassistant.exceptions import TemplateError
 from homeassistant.helpers.selector import (
-    ActionSelector,
-    EntitySelector,
-    IconSelector,
-    NumberSelector,
-    NumberSelectorConfig,
-    NumberSelectorMode,
-    ObjectSelector,
     SelectOptionDict,
     SelectSelector,
     SelectSelectorConfig,
     SelectSelectorMode,
-    TemplateSelector,
-    TextSelector,
-    TextSelectorConfig,
 )
-from homeassistant.helpers.template import Template
 
-from .attributes import RESERVED_ATTRIBUTES, attribute_template_error
+from .attributes import RESERVED_ATTRIBUTES
 from .const import (
-    CONF_ACTION_OFF,
-    CONF_ACTION_ON,
-    CONF_ACTION_PRESS,
-    CONF_ACTION_SELECT,
-    CONF_ACTION_SET,
     CONF_ATTRIBUTE_NAMES,
     CONF_ATTRIBUTE_TEMPLATES,
     CONF_COPY_ATTRIBUTES,
-    CONF_DEVICE_CLASS,
     CONF_DEVICE_NAME,
     CONF_ENTITIES,
     CONF_ICON,
     CONF_ID,
     CONF_MANUFACTURER,
-    CONF_MAX,
-    CONF_MIN,
     CONF_MODEL,
     CONF_NAME,
-    CONF_OPTIONS,
     CONF_PICK,
     CONF_PLATFORM,
     CONF_SOURCE_ATTRIBUTE,
     CONF_SOURCE_ENTITY,
-    CONF_STATE_CLASS,
-    CONF_STEP,
-    CONF_UNIT,
     CONF_VALUE_TEMPLATE,
-    COPY_MODES,
     COPY_SELECTED,
-    PLATFORMS,
 )
-from .device_classes import (
-    BINARY_SENSOR_DEVICE_CLASSES,
-    SENSOR_DEVICE_CLASSES,
-    SENSOR_STATE_CLASSES,
+from .flow_forms import (
+    attributes_schema,
+    basics_schema,
+    details_schema,
+    device_schema,
+    source_schema,
 )
+from .flow_validation import validate_details, validate_source
 from .forwarding import forwarding_actions
 from .source_defaults import defaults_from_source
 
@@ -86,94 +62,6 @@ _SOURCE_KEYS = (
 # Optional text properties of the device, besides its name.
 _DEVICE_KEYS = (CONF_MANUFACTURER, CONF_MODEL)
 _SHARED_KEYS = {CONF_ID, CONF_ICON, *_SOURCE_KEYS}
-
-
-def _suggest(draft: dict[str, Any], key: str) -> dict[str, Any]:
-    """Prefill a form field from the entity being edited."""
-    return {"suggested_value": draft.get(key)}
-
-
-def _dropdown(options: list[str]) -> SelectSelector:
-    return SelectSelector(
-        SelectSelectorConfig(options=options, mode=SelectSelectorMode.DROPDOWN, sort=True)
-    )
-
-
-def _action_field(draft: dict[str, Any], key: str) -> dict[Any, Any]:
-    return {vol.Optional(key, description=_suggest(draft, key)): ActionSelector()}
-
-
-def _details_schema(platform: str, draft: dict[str, Any]) -> vol.Schema:
-    """The fields that are specific to the type of the entity."""
-    fields: dict[Any, Any]
-    match platform:
-        case Platform.SENSOR:
-            fields = {
-                vol.Optional(CONF_UNIT, description=_suggest(draft, CONF_UNIT)): TextSelector(),
-                vol.Optional(
-                    CONF_DEVICE_CLASS, description=_suggest(draft, CONF_DEVICE_CLASS)
-                ): _dropdown(SENSOR_DEVICE_CLASSES),
-                vol.Optional(
-                    CONF_STATE_CLASS, description=_suggest(draft, CONF_STATE_CLASS)
-                ): _dropdown(SENSOR_STATE_CLASSES),
-            }
-        case Platform.BINARY_SENSOR:
-            fields = {
-                vol.Optional(
-                    CONF_DEVICE_CLASS, description=_suggest(draft, CONF_DEVICE_CLASS)
-                ): _dropdown(BINARY_SENSOR_DEVICE_CLASSES)
-            }
-        case Platform.SWITCH:
-            fields = _action_field(draft, CONF_ACTION_ON) | _action_field(draft, CONF_ACTION_OFF)
-        case Platform.NUMBER:
-            number = NumberSelector(NumberSelectorConfig(mode=NumberSelectorMode.BOX, step="any"))
-            fields = {
-                vol.Required(CONF_MIN, default=draft.get(CONF_MIN, 0)): number,
-                vol.Required(CONF_MAX, default=draft.get(CONF_MAX, 100)): number,
-                vol.Required(CONF_STEP, default=draft.get(CONF_STEP, 1)): number,
-                vol.Optional(CONF_UNIT, description=_suggest(draft, CONF_UNIT)): TextSelector(),
-            } | _action_field(draft, CONF_ACTION_SET)
-        case Platform.SELECT:
-            fields = {
-                vol.Optional(CONF_OPTIONS, description=_suggest(draft, CONF_OPTIONS)): TextSelector(
-                    TextSelectorConfig(multiple=True)
-                )
-            } | _action_field(draft, CONF_ACTION_SELECT)
-        case Platform.BUTTON:
-            fields = _action_field(draft, CONF_ACTION_PRESS)
-        case _:
-            raise ValueError(f"Unknown platform {platform}")
-    return vol.Schema(fields)
-
-
-def _validate_details(platform: str, user_input: dict[str, Any]) -> dict[str, str]:
-    """Form errors for the platform specific fields."""
-    errors: dict[str, str] = {}
-    if platform == Platform.NUMBER and user_input[CONF_MIN] >= user_input[CONF_MAX]:
-        errors[CONF_MAX] = "min_greater_max"
-    if platform == Platform.SELECT and not user_input.get(CONF_OPTIONS):
-        errors[CONF_OPTIONS] = "options_required"
-    return errors
-
-
-def _validate_source(
-    hass: HomeAssistant, user_input: dict[str, Any]
-) -> tuple[dict[str, str], dict[str, str]]:
-    """Form errors for the source fields, and the placeholders their texts need."""
-    templates = user_input.get(CONF_ATTRIBUTE_TEMPLATES)
-    if templates:
-        if problem := attribute_template_error(templates):
-            error, attribute = problem
-            return {CONF_ATTRIBUTE_TEMPLATES: error}, {"attribute": attribute}
-        for attribute, text in templates.items():
-            try:
-                Template(text, hass).ensure_valid()
-            except TemplateError as err:
-                return (
-                    {CONF_ATTRIBUTE_TEMPLATES: "attribute_template_invalid"},
-                    {"attribute": attribute, "error": str(err)},
-                )
-    return {}, {}
 
 
 class VirtualDeviceSubentryFlow(ConfigSubentryFlow):
@@ -250,17 +138,7 @@ class VirtualDeviceSubentryFlow(ConfigSubentryFlow):
 
     def _show_device_form(self, step_id: str) -> SubentryFlowResult:
         current = self._device_settings
-        schema = vol.Schema(
-            {
-                vol.Required(
-                    CONF_DEVICE_NAME, description=_suggest(current, CONF_DEVICE_NAME)
-                ): TextSelector(),
-                vol.Optional(
-                    CONF_MANUFACTURER, description=_suggest(current, CONF_MANUFACTURER)
-                ): TextSelector(),
-                vol.Optional(CONF_MODEL, description=_suggest(current, CONF_MODEL)): TextSelector(),
-            }
-        )
+        schema = device_schema(current)
         return self.async_show_form(step_id=step_id, data_schema=schema)
 
     def _take_device_settings(self, user_input: dict[str, Any]) -> None:
@@ -381,7 +259,7 @@ class VirtualDeviceSubentryFlow(ConfigSubentryFlow):
             self._adding = True
             self._source_done = True
             return self._show_source_form("add_from_source")
-        errors, placeholders = _validate_source(self.hass, user_input)
+        errors, placeholders = validate_source(self.hass, user_input)
         if errors:
             self._draft |= user_input
             return self._show_source_form("add_from_source", errors, placeholders)
@@ -391,31 +269,14 @@ class VirtualDeviceSubentryFlow(ConfigSubentryFlow):
         return await self._after_source_form(self._show_basics)
 
     def _show_basics_form(self) -> SubentryFlowResult:
-        schema = vol.Schema(
-            {
-                vol.Required(
-                    CONF_PLATFORM, default=self._draft.get(CONF_PLATFORM, Platform.SENSOR)
-                ): SelectSelector(
-                    SelectSelectorConfig(
-                        options=[str(p) for p in PLATFORMS],
-                        mode=SelectSelectorMode.DROPDOWN,
-                        translation_key="platform",
-                    )
-                ),
-                vol.Required(CONF_NAME, default=self._draft.get(CONF_NAME, "")): TextSelector(),
-                vol.Optional(
-                    CONF_ICON, description=_suggest(self._draft, CONF_ICON)
-                ): IconSelector(),
-            }
-        )
-        return self.async_show_form(step_id="add_entity", data_schema=schema)
+        return self.async_show_form(step_id="add_entity", data_schema=basics_schema(self._draft))
 
     async def async_step_entity_source(
         self, user_input: dict[str, Any] | None = None
     ) -> SubentryFlowResult:
         """Source entity, source attribute, value template and copied attributes."""
         if user_input is not None:
-            errors, placeholders = _validate_source(self.hass, user_input)
+            errors, placeholders = validate_source(self.hass, user_input)
             if errors:
                 self._draft |= user_input
                 return self._show_source_form("entity_source", errors, placeholders)
@@ -445,20 +306,7 @@ class VirtualDeviceSubentryFlow(ConfigSubentryFlow):
             errors[CONF_ATTRIBUTE_NAMES] = "attribute_names_required"
         source = self.hass.states.get(self._draft.get(CONF_SOURCE_ENTITY, ""))
         offered = sorted(set(source.attributes) - RESERVED_ATTRIBUTES) if source else []
-        schema = vol.Schema(
-            {
-                vol.Required(
-                    CONF_ATTRIBUTE_NAMES, description=_suggest(self._draft, CONF_ATTRIBUTE_NAMES)
-                ): SelectSelector(
-                    SelectSelectorConfig(
-                        options=offered,
-                        multiple=True,
-                        custom_value=True,
-                        mode=SelectSelectorMode.DROPDOWN,
-                    )
-                )
-            }
-        )
+        schema = attributes_schema(self._draft, offered)
         return self.async_show_form(step_id="select_attributes", data_schema=schema, errors=errors)
 
     async def _show_basics(self) -> SubentryFlowResult:
@@ -472,7 +320,7 @@ class VirtualDeviceSubentryFlow(ConfigSubentryFlow):
     ) -> SubentryFlowResult:
         return self.async_show_form(
             step_id=step_id,
-            data_schema=self._source_schema(),
+            data_schema=source_schema(self._draft),
             errors=errors,
             description_placeholders=placeholders,
         )
@@ -486,34 +334,6 @@ class VirtualDeviceSubentryFlow(ConfigSubentryFlow):
         if user_input.get(CONF_COPY_ATTRIBUTES) == COPY_SELECTED and names:
             self._draft[CONF_ATTRIBUTE_NAMES] = names  # shown again as the current choice
 
-    def _source_schema(self) -> vol.Schema:
-        return vol.Schema(
-            {
-                vol.Required(
-                    CONF_SOURCE_ENTITY, description=_suggest(self._draft, CONF_SOURCE_ENTITY)
-                ): EntitySelector(),
-                vol.Optional(
-                    CONF_SOURCE_ATTRIBUTE, description=_suggest(self._draft, CONF_SOURCE_ATTRIBUTE)
-                ): TextSelector(),
-                vol.Optional(
-                    CONF_VALUE_TEMPLATE, description=_suggest(self._draft, CONF_VALUE_TEMPLATE)
-                ): TemplateSelector(),
-                vol.Optional(
-                    CONF_COPY_ATTRIBUTES, description=_suggest(self._draft, CONF_COPY_ATTRIBUTES)
-                ): SelectSelector(
-                    SelectSelectorConfig(
-                        options=list(COPY_MODES),
-                        mode=SelectSelectorMode.DROPDOWN,
-                        translation_key="copy_attributes",
-                    )
-                ),
-                vol.Optional(
-                    CONF_ATTRIBUTE_TEMPLATES,
-                    description=_suggest(self._draft, CONF_ATTRIBUTE_TEMPLATES),
-                ): ObjectSelector(),
-            }
-        )
-
     async def _next_after_source(self) -> SubentryFlowResult:
         return await self.async_step_entity_details()
 
@@ -524,21 +344,21 @@ class VirtualDeviceSubentryFlow(ConfigSubentryFlow):
         platform = self._draft[CONF_PLATFORM]
         if user_input is None and self._adding:
             self._suggest_from_source(platform)
-        schema = _details_schema(platform, self._draft)
+        schema = details_schema(platform, self._draft)
         errors: dict[str, str] = {}
         if user_input is not None:
-            errors = _validate_details(platform, user_input)
+            errors = validate_details(platform, user_input)
             if not errors:
                 self._merge(schema, user_input)
                 self._commit_draft()
                 return await self.async_step_init()
             self._draft |= user_input
-            schema = _details_schema(platform, self._draft)
+            schema = details_schema(platform, self._draft)
         return self.async_show_form(step_id="entity_details", data_schema=schema, errors=errors)
 
     def _suggest_from_source(self, platform: str) -> None:
         """Fill details the user has not set yet: settings and forwarding actions of the source."""
-        schema = _details_schema(platform, self._draft)
+        schema = details_schema(platform, self._draft)
         wanted = {str(key) for key in schema.schema}
         source = self.hass.states.get(self._draft.get(CONF_SOURCE_ENTITY, ""))
         for key, value in (

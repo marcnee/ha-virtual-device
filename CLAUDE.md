@@ -59,7 +59,13 @@ Run `ruff format .` and the tests before every commit.
 
 - `custom_components/virtual_device/` the integration (`manifest.json`, ...)
   - `config_flow.py` sets up the single service; `device_flow.py` is the subentry flow that
-    creates/edits one virtual device. Each virtual device is a config subentry of the service.
+    creates/edits one virtual device (the order of the steps). Each virtual device is a config
+    subentry of the service. `flow_forms.py` has the form schemas, `flow_validation.py` the checks
+    of what was entered.
+  - `source_issues.py` raises repair issues for missing sources, `repairs.py` is the flow that
+    fixes them; `missing_sources.py` is their pure logic, `source_exists.py` the shared check.
+  - `definitions.py` reads the entity definitions from the service, `device_classes.py` lists the
+    device and state classes.
   - `manager.py` starts/stops entities when the configuration changes (no reload of the service);
     `changes.py` is its pure diff logic, `attributes.py` the pure logic for copied attributes.
   - `transform.py`, `attributes.py`, `source_defaults.py`, `forwarding.py` hold the pure logic
