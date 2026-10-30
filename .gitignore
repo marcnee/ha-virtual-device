@@ -8,3 +8,4 @@ htmlcov/
 .env
 dev/
 virtual_device.zip
+release_notes.md

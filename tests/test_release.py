@@ -42,3 +42,10 @@ def test_changelog_has_notes_for_the_manifest_version() -> None:
 def test_release_workflow_uses_the_changelog_as_release_notes() -> None:
     assert "scripts/release_notes.py" in RELEASE_WORKFLOW
     assert "--notes-file" in RELEASE_WORKFLOW
+
+
+def test_the_files_made_by_building_a_release_by_hand_are_not_committed() -> None:
+    ignored = (ROOT / ".gitignore").read_text().split()
+
+    assert "release_notes.md" in ignored
+    assert HACS["filename"] in ignored
