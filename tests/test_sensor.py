@@ -1,5 +1,6 @@
 """Virtual sensors."""
 
+from homeassistant.const import STATE_UNAVAILABLE, STATE_UNKNOWN
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
@@ -54,3 +55,48 @@ async def test_source_entity_is_left_untouched(
     source = hass.states.get(SOURCE)
     assert source.state == "18 - In Betrieb"
     assert source.attributes == {"foo": "bar"}
+
+
+async def test_sensor_follows_source_changes(
+    hass: HomeAssistant, setup_device: SetupDevice
+) -> None:
+    hass.states.async_set(SOURCE, "18 - In Betrieb")
+    await setup_device([STATUS])
+
+    hass.states.async_set(SOURCE, "19 - Standby")
+    await hass.async_block_till_done()
+
+    assert hass.states.get("sensor.heat_pump_status").state == "19 - Standby"
+
+
+async def test_sensor_is_unavailable_while_source_is_unavailable(
+    hass: HomeAssistant, setup_device: SetupDevice
+) -> None:
+    hass.states.async_set(SOURCE, "18 - In Betrieb")
+    await setup_device([STATUS])
+
+    hass.states.async_set(SOURCE, STATE_UNAVAILABLE)
+    await hass.async_block_till_done()
+    assert hass.states.get("sensor.heat_pump_status").state == STATE_UNAVAILABLE
+
+    hass.states.async_set(SOURCE, "18 - In Betrieb")
+    await hass.async_block_till_done()
+    assert hass.states.get("sensor.heat_pump_status").state == "18 - In Betrieb"
+
+
+async def test_sensor_is_unavailable_when_source_does_not_exist(
+    hass: HomeAssistant, setup_device: SetupDevice
+) -> None:
+    await setup_device([STATUS])
+
+    assert hass.states.get("sensor.heat_pump_status").state == STATE_UNAVAILABLE
+
+
+async def test_sensor_is_unknown_while_source_is_unknown(
+    hass: HomeAssistant, setup_device: SetupDevice
+) -> None:
+    hass.states.async_set(SOURCE, STATE_UNKNOWN)
+
+    await setup_device([STATUS])
+
+    assert hass.states.get("sensor.heat_pump_status").state == STATE_UNKNOWN
