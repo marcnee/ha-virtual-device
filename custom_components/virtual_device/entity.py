@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import STATE_UNAVAILABLE, STATE_UNKNOWN
+from homeassistant.const import STATE_UNAVAILABLE, STATE_UNKNOWN, Platform
 from homeassistant.core import Event, EventStateChangedData, State, callback
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity import Entity
@@ -13,14 +13,21 @@ from homeassistant.helpers.event import async_track_state_change_event
 
 from .const import (
     CONF_DEVICE_NAME,
+    CONF_ENTITIES,
     CONF_ID,
     CONF_NAME,
+    CONF_PLATFORM,
     CONF_SOURCE_ATTRIBUTE,
     CONF_SOURCE_ENTITY,
     CONF_VALUE_TEMPLATE,
     DOMAIN,
 )
 from .transform import ValueTransformer
+
+
+def entity_configs(entry: ConfigEntry, platform: Platform) -> list[dict[str, Any]]:
+    """The virtual entity definitions of one platform."""
+    return [c for c in entry.options[CONF_ENTITIES] if c[CONF_PLATFORM] == platform]
 
 
 class VirtualEntity(Entity):

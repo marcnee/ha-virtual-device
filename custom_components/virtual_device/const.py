@@ -13,6 +13,6 @@ CONF_PLATFORM = "platform"
 CONF_NAME = "name"
 CONF_SOURCE_ENTITY = "source_entity"
 
-PLATFORMS = [Platform.SENSOR]
+PLATFORMS = [Platform.SENSOR, Platform.BINARY_SENSOR]
 CONF_SOURCE_ATTRIBUTE = "source_attribute"
 CONF_VALUE_TEMPLATE = "value_template"
