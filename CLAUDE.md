@@ -38,6 +38,9 @@ Run `ruff format .` and the tests before every commit.
     creates/edits one virtual device. Each virtual device is a config subentry of the service.
   - `manager.py` starts/stops entities when the configuration changes (no reload of the service);
     `changes.py` is its pure diff logic, `attributes.py` the pure logic for copied attributes.
+  - `transform.py`, `attributes.py`, `source_defaults.py`, `forwarding.py` hold the pure logic
+    for templates, copied attributes and suggestions from the source.
+  - `brand/` icon PNGs; render them from `assets/icon.svg` with `scripts/render_brand.py`.
 - `tests/` pytest tests, one file per module
 - `DEVELOPMENT.md` how to test and try it, `ROADMAP.md` planned work
 

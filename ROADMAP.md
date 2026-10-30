@@ -18,6 +18,7 @@ Done
 - [x] Manufacturer and model per virtual device, editable together with its name
 - [x] Changes only restart the changed entities (no reload of the service)
 - [x] A broken action only disables that command
+- [x] Integration icon (`brand/`)
 - [x] English translations
 - [x] Release workflow (GitHub release + ZIP for HACS)
 
@@ -41,6 +42,7 @@ Next (test first)
     long form per type and a lot more code and tests.
   Possible order: mirror first for the simple clone case, assemble per type later.
 - [ ] Try it in a real Home Assistant (`docker compose --profile dev up homeassistant`) and fix findings
+- [ ] Check the GitHub workflows (CI, hassfest, release) on a real run
 - [ ] German translation
 - [ ] Diagnostics and repair issues (e.g. source entity missing)
 
