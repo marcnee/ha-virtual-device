@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import CONF_ENTITIES, CONF_PLATFORM
@@ -25,7 +25,6 @@ async def async_setup_entry(
 class VirtualSensor(VirtualEntity, SensorEntity):
     """A sensor showing the state of a source entity."""
 
-    async def async_added_to_hass(self) -> None:
-        """Take over the current state of the source."""
-        source_state = self.hass.states.get(self._source)
-        self._attr_native_value = source_state.state if source_state else None
+    @callback
+    def _apply(self, value: str | None) -> None:
+        self._attr_native_value = value
