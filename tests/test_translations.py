@@ -108,10 +108,11 @@ def _texts(node: object) -> list[str]:
 def test_curly_braces_are_escaped_for_the_ui() -> None:
     """The UI formats texts as ICU messages: a literal brace must be written as '{' or '}'.
 
-    Only the placeholders the flow fills in ({attribute}, {error}) are left as they are.
+    Only the placeholders the flows fill in ({attribute}, {error}, {device}, {entity},
+    {source}) are left as they are.
     """
     for text in _texts(STRINGS):
-        unescaped = re.sub(r"'[{}]+'|\{(?:attribute|error)\}", "", text)
+        unescaped = re.sub(r"'[{}]+'|\{(?:attribute|error|device|entity|source)\}", "", text)
         assert "{" not in unescaped, text
         assert "}" not in unescaped, text
 
@@ -119,3 +120,22 @@ def test_curly_braces_are_escaped_for_the_ui() -> None:
 def test_every_copy_mode_has_a_label() -> None:
     labels = STRINGS["selector"]["copy_attributes"]["options"]
     assert set(COPY_MODES) <= set(labels)
+
+
+ISSUE = STRINGS.get("issues", {}).get("source_missing", {})
+
+
+def test_source_missing_issue_texts() -> None:
+    fix = ISSUE["fix_flow"]
+    assert ISSUE["title"]
+    assert ISSUE["description"]
+    assert fix["step"]["source"]["title"]
+    assert fix["step"]["source"]["description"]
+    assert fix["step"]["source"]["data"]["source_entity"]
+    assert fix["error"]["source_not_found"]
+    assert fix["abort"]["entity_not_found"]
+
+
+def test_source_missing_texts_use_only_the_placeholders_of_the_issue() -> None:
+    used = {name for text in _texts(ISSUE) for name in re.findall(r"\{(\w+)\}", text)}
+    assert used <= {"device", "entity", "source"}

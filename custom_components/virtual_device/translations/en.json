@@ -180,5 +180,28 @@
         "selected": "Selected attributes"
       }
     }
+  },
+  "issues": {
+    "source_missing": {
+      "title": "Source of {entity} is missing",
+      "fix_flow": {
+        "step": {
+          "source": {
+            "title": "Choose a new source",
+            "description": "The virtual entity {entity} of {device} follows {source}, but this entity does not exist any more. Choose the entity it should follow instead. Nothing else about the entity changes.",
+            "data": {
+              "source_entity": "New source"
+            }
+          }
+        },
+        "error": {
+          "source_not_found": "This entity does not exist."
+        },
+        "abort": {
+          "entity_not_found": "The virtual entity does not exist any more."
+        }
+      },
+      "description": "The virtual entity {entity} of {device} follows {source}, but this entity does not exist. The virtual entity is unavailable until you choose a new source or the source returns."
+    }
   }
 }

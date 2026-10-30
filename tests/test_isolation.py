@@ -2,9 +2,11 @@
 
 from typing import Any
 
+from homeassistant.components.repairs import repairs_flow_manager
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
+from homeassistant.helpers import issue_registry as ir
 from homeassistant.setup import async_setup_component
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
@@ -71,6 +73,7 @@ def outside_view(hass: HomeAssistant) -> dict[str, Any]:
             for e in hass.config_entries.async_entries()
             if e.domain != DOMAIN
         },
+        "issues": {key: i for key, i in ir.async_get(hass).issues.items() if key[0] != DOMAIN},
         "services": {
             domain: set(names) for domain, names in hass.services.async_services().items()
         },
@@ -104,4 +107,38 @@ async def test_setting_up_changing_and_removing_devices_leaves_everything_else_a
 
     await hass.config_entries.async_remove(entry.entry_id)
     await hass.async_block_till_done()
+    assert outside_view(hass) == before
+
+
+async def test_a_missing_source_and_its_repair_leave_everything_else_alone(
+    hass: HomeAssistant, setup_device: SetupDevice
+) -> None:
+    for platform in PLATFORMS:
+        assert await async_setup_component(hass, platform, {})
+    assert await async_setup_component(hass, "repairs", {})
+    add_foreign_source(hass)
+    ir.async_create_issue(
+        hass,
+        "other",
+        "foreign",
+        is_fixable=False,
+        severity=ir.IssueSeverity.WARNING,
+        translation_key="foreign",
+    )
+    before = outside_view(hass)
+
+    entry = await setup_device([virtual_sensor("outside", "Outside") | {CONF_SOURCE_ENTITY: "x.y"}])
+    assert [key[0] for key in ir.async_get(hass).issues if key[0] == DOMAIN] == [DOMAIN]
+    assert outside_view(hass) == before
+
+    subentry = next(iter(entry.subentries.values()))
+    manager = repairs_flow_manager(hass)
+    [(_, issue_id)] = [key for key in ir.async_get(hass).issues if key[0] == DOMAIN]
+    result = await manager.async_init(DOMAIN, context={"issue_id": issue_id})
+    await manager.async_configure(result["flow_id"], {CONF_SOURCE_ENTITY: SOURCE})
+    await hass.async_block_till_done()
+
+    assert subentry.data[CONF_ENTITIES][0][CONF_SOURCE_ENTITY] == SOURCE
+    assert hass.states.get("sensor.heat_pump_outside").state == "5"
+    assert [key for key in ir.async_get(hass).issues if key[0] == DOMAIN] == []
     assert outside_view(hass) == before

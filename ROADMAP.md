@@ -20,6 +20,8 @@ Done
 - [x] A broken action only disables that command
 - [x] Integration icon (`brand/`)
 - [x] Migration framework for stored data, release notes from `CHANGELOG.md`
+- [x] Repair issue with a flow to choose a new source when the source entity is missing
+- [x] Released layouts are frozen in tests (`tests/released/`)
 - [x] Scheduled tests against the newest Home Assistant release and beta
 - [x] English translations
 - [x] Release workflow (GitHub release + ZIP for HACS)
@@ -46,7 +48,7 @@ Next
     long form per type and a lot more code and tests.
   Possible order: mirror first for the simple clone case, assemble per type later.
 - [ ] German translation
-- [ ] Diagnostics and repair issues (e.g. source entity missing)
+- [ ] Diagnostics
 
 Ideas, not decided
 - Switch, number and select without a source entity (optimistic state)

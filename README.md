@@ -77,6 +77,11 @@ Every entity can have its own icon. A virtual entity is *unavailable* while its 
 unavailable, and *unknown* while the source is unknown, has no such attribute or the template
 fails or returns nothing.
 
+If the source does not exist at all (deleted, or its integration removed), Home Assistant shows a
+repair issue: choose a new source there, or wait for the source to return. The virtual entity
+stays unavailable meanwhile. Nothing is checked while Home Assistant starts, and the source
+being only unavailable raises no issue.
+
 Binary sensors and switches treat the (transformed) value `on`, `true`, `1` and `yes` as on and
 everything else as off. Use a template for other conventions.
 

@@ -154,6 +154,8 @@ start with an empty `dev/config`)
       source entities stay untouched
 - [ ] Restart Home Assistant: everything comes back with the same entity IDs
 - [ ] A source that becomes unavailable makes its virtual entity unavailable and back again
+- [ ] Delete the source entity: a repair issue appears; choosing a new source in it fixes the
+      entity and the issue disappears (a source that is only unavailable raises no issue)
 - [ ] Look at the log: no errors or warnings from `custom_components.virtual_device`
 
 **Upgrade check** (from the first release on)
