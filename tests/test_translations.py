@@ -11,7 +11,7 @@ EN_JSON = Path(__file__).parents[1] / "custom_components/virtual_device/translat
 STRINGS = json.loads(EN_JSON.read_text())
 
 OPTION_FIELDS = {
-    "add_entity": ["platform", "name"],
+    "add_entity": ["platform", "name", "icon"],
     "entity_source": ["source_entity", "source_attribute", "value_template"],
     "entity_details": [
         "min_value",

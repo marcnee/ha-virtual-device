@@ -19,6 +19,7 @@ from .const import (
     ACTION_KEYS,
     CONF_DEVICE_NAME,
     CONF_ENTITIES,
+    CONF_ICON,
     CONF_ID,
     CONF_NAME,
     CONF_PLATFORM,
@@ -56,6 +57,7 @@ class VirtualEntity(Entity):
         self._actions: dict[str, ActionRunner] = {}
         self._attr_name = config[CONF_NAME]
         self._attr_unique_id = make_unique_id(entry.entry_id, config[CONF_ID])
+        self._attr_icon = config.get(CONF_ICON)
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, entry.entry_id)},
             name=entry.data[CONF_DEVICE_NAME],

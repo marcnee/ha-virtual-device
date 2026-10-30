@@ -16,6 +16,7 @@ from homeassistant.const import Platform
 from homeassistant.helpers.selector import (
     ActionSelector,
     EntitySelector,
+    IconSelector,
     NumberSelector,
     NumberSelectorConfig,
     NumberSelectorMode,
@@ -36,6 +37,7 @@ from .const import (
     CONF_ACTION_SET,
     CONF_DEVICE_CLASS,
     CONF_ENTITIES,
+    CONF_ICON,
     CONF_ID,
     CONF_MAX,
     CONF_MIN,
@@ -53,7 +55,7 @@ from .const import (
 )
 
 # Fields kept when the platform of an entity is changed while editing.
-_SHARED_KEYS = {CONF_ID, CONF_SOURCE_ENTITY, CONF_SOURCE_ATTRIBUTE, CONF_VALUE_TEMPLATE}
+_SHARED_KEYS = {CONF_ID, CONF_ICON, CONF_SOURCE_ENTITY, CONF_SOURCE_ATTRIBUTE, CONF_VALUE_TEMPLATE}
 
 
 def _suggest(draft: dict[str, Any], key: str) -> dict[str, Any]:
@@ -228,7 +230,10 @@ class VirtualDeviceOptionsFlow(OptionsFlow):
         if self._draft.get(CONF_PLATFORM, platform) != platform:
             # Platform changed while editing: keep only what all platforms share.
             self._draft = {k: v for k, v in self._draft.items() if k in _SHARED_KEYS}
+        self._draft.pop(CONF_ICON, None)
         self._draft |= {CONF_PLATFORM: platform, CONF_NAME: user_input[CONF_NAME]}
+        if icon := user_input.get(CONF_ICON):
+            self._draft[CONF_ICON] = icon
         if platform == Platform.BUTTON:
             return await self.async_step_entity_details()
         return await self.async_step_entity_source()
@@ -246,6 +251,9 @@ class VirtualDeviceOptionsFlow(OptionsFlow):
                     )
                 ),
                 vol.Required(CONF_NAME, default=self._draft.get(CONF_NAME, "")): TextSelector(),
+                vol.Optional(
+                    CONF_ICON, description=_suggest(self._draft, CONF_ICON)
+                ): IconSelector(),
             }
         )
         return self.async_show_form(step_id="add_entity", data_schema=schema)

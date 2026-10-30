@@ -50,3 +50,5 @@ ACTION_KEYS = (
 
 CONF_DEVICE_CLASS = "device_class"
 CONF_STATE_CLASS = "state_class"
+
+CONF_ICON = "icon"

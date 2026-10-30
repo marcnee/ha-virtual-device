@@ -9,14 +9,14 @@ Done
 - [x] Options flow to add, edit and remove entities
 - [x] Stale entities are removed from the registry
 - [x] Sensor options: unit, device class, state class
+- [x] Optional icon per virtual entity
+- [x] A broken action only disables that command
 - [x] English translations
 - [x] Release workflow (GitHub release + ZIP for HACS)
 
 Next (test first)
-
 - [ ] Try it in a real Home Assistant (`docker compose --profile dev up homeassistant`) and fix findings
 - [ ] German translation
-- [ ] Optional icon per virtual entity
 - [ ] Diagnostics and repair issues (e.g. source entity missing)
 
 Ideas, not decided

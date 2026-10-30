@@ -27,7 +27,11 @@
         "description": "Any number of virtual entities can be built from the same source, for example a text and a number.",
         "data": {
           "platform": "Type",
-          "name": "Name"
+          "name": "Name",
+          "icon": "Icon"
+        },
+        "data_description": {
+          "icon": "Optional. Overrides the default icon."
         }
       },
       "entity_source": {
