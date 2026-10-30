@@ -6,11 +6,11 @@ from typing import Any
 
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import CONF_ENTITIES, CONF_PLATFORM
-from .entity import VirtualEntity
+from .entity import VirtualEntity, entity_configs
 
 
 async def async_setup_entry(
@@ -18,9 +18,7 @@ async def async_setup_entry(
 ) -> None:
     """Create the virtual sensors of a virtual device."""
     async_add_entities(
-        VirtualSensor(entry, config)
-        for config in entry.options[CONF_ENTITIES]
-        if config[CONF_PLATFORM] == "sensor"
+        VirtualSensor(entry, config) for config in entity_configs(entry, Platform.SENSOR)
     )
 
 

@@ -38,3 +38,12 @@ class ValueTransformer:
             _LOGGER.warning("Template of '%s' failed for value %r: %s", self._name, raw, err)
             return None
         return None if result.strip().lower() in _NO_VALUE else result
+
+
+# Values that mean "on". Everything else means "off"; use a template for other conventions.
+_TRUE_VALUES = frozenset({"on", "true", "1", "yes"})
+
+
+def to_bool(value: Any) -> bool:
+    """Interpret a (transformed) value as on/off."""
+    return str(value).strip().lower() in _TRUE_VALUES
