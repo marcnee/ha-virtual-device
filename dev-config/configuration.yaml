@@ -1,0 +1,35 @@
+# Configuration of the dev instance only (docker compose --profile dev up homeassistant).
+# It is mounted over /config/configuration.yaml. It gives you entities to use as sources.
+
+default_config:
+
+logger:
+  default: warning
+  logs:
+    custom_components.virtual_device: debug
+
+# Home Assistant's demo: many sensors, binary sensors, switches, numbers, selects and buttons,
+# and the helpers input_boolean.notify, input_number.noise_allowance, input_select.who_cooks and
+# input_button.bell. Do not define input_* helpers here: the demo sets those domains up itself.
+demo:
+
+# A sensor with attributes (to try copied attributes and attribute templates); it changes
+# slowly so that you can see the virtual entity follow.
+template:
+  - sensor:
+      - name: Dev temperature
+        unique_id: dev_temperature
+        unit_of_measurement: °C
+        device_class: temperature
+        state_class: measurement
+        icon: mdi:thermometer
+        state: "{{ (20 + 3 * sin(now().timestamp() / 600)) | round(1) }}"
+        attributes:
+          room: Living room
+          battery: 87
+          sensor_type: virtual demo
+  - binary_sensor:
+      - name: Dev door
+        unique_id: dev_door
+        device_class: door
+        state: "{{ now().minute % 2 == 0 }}"

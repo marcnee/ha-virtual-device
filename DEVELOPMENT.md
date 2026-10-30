@@ -45,6 +45,18 @@ mkdir -p dev/config
 docker compose --profile dev up homeassistant
 ```
 
+The instance starts with the configuration in `dev-config/configuration.yaml` (mounted read-only
+over `dev/config/configuration.yaml`), so there are entities to use as sources from the start:
+
+| Entities | Use them as source for |
+|---|---|
+| Home Assistant's `demo`: sensors, binary sensors, switches, numbers, selects, buttons | all supported types, closest to real devices |
+| `input_boolean.notify`, `input_number.noise_allowance`, `input_select.who_cooks`, `input_button.bell` (also from the demo) | switch, number, select and button with working commands |
+| `sensor.dev_temperature` (unit, device class, icon, attributes `room`, `battery`, `sensor_type`), `binary_sensor.dev_door` (our own) | value templates, copied attributes and attribute templates; they change every minute |
+
+The integration logs at debug level. Change `dev-config/configuration.yaml` to add more
+entities; restart the container to apply it.
+
 Open <http://localhost:8123>, finish onboarding, then *Settings → Devices & services → Add
 integration → Virtual Device*, then *Add virtual device* on the entry. The integration folder is
 mounted, so after a code change run `docker compose restart homeassistant`. `dev/` is not tracked
