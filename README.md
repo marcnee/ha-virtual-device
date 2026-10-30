@@ -154,6 +154,9 @@ so downgrade only together with a backup.
   and others cannot be rebuilt yet.
 - Commands reach the source only through the actions you configure (or the suggested ones). A
   switch, number or select never assumes a new state; it follows the source.
+- The forms have no *Back* button (Home Assistant's dialogs have none). A form of an entity has to
+  be finished to return to the menu. Closing the dialog with the X cancels everything that was
+  not saved with *Save and finish*.
 - A device has no icon of its own, because Home Assistant has none for devices. Entities do.
 - Only English texts for now.
 - Entries from before the single-service layout are not migrated: delete them and add the virtual
