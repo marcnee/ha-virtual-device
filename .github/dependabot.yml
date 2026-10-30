@@ -1,0 +1,8 @@
+# Keeps the GitHub actions up to date. The Python pins (requirements_test.txt) are bumped by hand
+# together with hacs.json, compose.yaml and the other places listed in CLAUDE.md.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly

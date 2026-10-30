@@ -1,0 +1,36 @@
+name: Home Assistant compatibility
+
+# The normal CI runs against the pinned Home Assistant version (requirements_test.txt). This
+# workflow runs the tests against the newest release and the newest beta, so that breaking
+# changes show up here before they reach users. A failing run is reported by GitHub by e-mail.
+# After a fix, or when the newest release is supported, bump the pinned version (see CLAUDE.md).
+on:
+  schedule:
+    - cron: "0 4 * * 1,4"
+  workflow_dispatch:
+
+jobs:
+  latest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.14"
+      # No pin: this package depends on exactly the matching Home Assistant release.
+      - run: pip install pytest-homeassistant-custom-component
+      - run: pip list | grep -i -E "^(homeassistant|pytest-homeassistant-custom-component) "
+      - run: python -m pytest
+
+  beta:
+    # Informational: a beta may still change, so it does not fail the workflow.
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.14"
+      - run: pip install --pre pytest-homeassistant-custom-component
+      - run: pip list | grep -i -E "^(homeassistant|pytest-homeassistant-custom-component) "
+      - run: python -m pytest
