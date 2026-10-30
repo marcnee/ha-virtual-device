@@ -15,23 +15,36 @@ from homeassistant.const import Platform
 from homeassistant.helpers.selector import (
     ActionSelector,
     EntitySelector,
+    NumberSelector,
+    NumberSelectorConfig,
+    NumberSelectorMode,
     SelectOptionDict,
     SelectSelector,
     SelectSelectorConfig,
     SelectSelectorMode,
     TemplateSelector,
     TextSelector,
+    TextSelectorConfig,
 )
 
 from .const import (
+    CONF_ACTION_OFF,
+    CONF_ACTION_ON,
     CONF_ACTION_PRESS,
+    CONF_ACTION_SELECT,
+    CONF_ACTION_SET,
     CONF_ENTITIES,
     CONF_ID,
+    CONF_MAX,
+    CONF_MIN,
     CONF_NAME,
+    CONF_OPTIONS,
     CONF_PICK,
     CONF_PLATFORM,
     CONF_SOURCE_ATTRIBUTE,
     CONF_SOURCE_ENTITY,
+    CONF_STEP,
+    CONF_UNIT,
     CONF_VALUE_TEMPLATE,
     PLATFORMS,
 )
@@ -45,17 +58,45 @@ def _suggest(draft: dict[str, Any], key: str) -> dict[str, Any]:
     return {"suggested_value": draft.get(key)}
 
 
+def _action_field(draft: dict[str, Any], key: str) -> dict[Any, Any]:
+    return {vol.Optional(key, description=_suggest(draft, key)): ActionSelector()}
+
+
 def _details_schema(platform: str, draft: dict[str, Any]) -> vol.Schema | None:
     """Platform specific fields, or None if the platform has none."""
-    if platform == Platform.BUTTON:
-        return vol.Schema(
-            {
-                vol.Optional(
-                    CONF_ACTION_PRESS, description=_suggest(draft, CONF_ACTION_PRESS)
-                ): ActionSelector()
-            }
-        )
-    return None
+    fields: dict[Any, Any]
+    match platform:
+        case Platform.SWITCH:
+            fields = _action_field(draft, CONF_ACTION_ON) | _action_field(draft, CONF_ACTION_OFF)
+        case Platform.NUMBER:
+            number = NumberSelector(NumberSelectorConfig(mode=NumberSelectorMode.BOX, step="any"))
+            fields = {
+                vol.Required(CONF_MIN, default=draft.get(CONF_MIN, 0)): number,
+                vol.Required(CONF_MAX, default=draft.get(CONF_MAX, 100)): number,
+                vol.Required(CONF_STEP, default=draft.get(CONF_STEP, 1)): number,
+                vol.Optional(CONF_UNIT, description=_suggest(draft, CONF_UNIT)): TextSelector(),
+            } | _action_field(draft, CONF_ACTION_SET)
+        case Platform.SELECT:
+            fields = {
+                vol.Optional(CONF_OPTIONS, description=_suggest(draft, CONF_OPTIONS)): TextSelector(
+                    TextSelectorConfig(multiple=True)
+                )
+            } | _action_field(draft, CONF_ACTION_SELECT)
+        case Platform.BUTTON:
+            fields = _action_field(draft, CONF_ACTION_PRESS)
+        case _:
+            return None
+    return vol.Schema(fields)
+
+
+def _validate_details(platform: str, user_input: dict[str, Any]) -> dict[str, str]:
+    """Form errors for the platform specific fields."""
+    errors: dict[str, str] = {}
+    if platform == Platform.NUMBER and user_input[CONF_MIN] >= user_input[CONF_MAX]:
+        errors[CONF_MAX] = "min_greater_max"
+    if platform == Platform.SELECT and not user_input.get(CONF_OPTIONS):
+        errors[CONF_OPTIONS] = "options_required"
+    return errors
 
 
 class VirtualDeviceOptionsFlow(OptionsFlow):
@@ -216,10 +257,16 @@ class VirtualDeviceOptionsFlow(OptionsFlow):
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         """Platform specific settings, such as the actions forwarding commands."""
-        schema = _details_schema(self._draft[CONF_PLATFORM], self._draft)
+        platform = self._draft[CONF_PLATFORM]
+        schema = _details_schema(platform, self._draft)
         assert schema is not None
+        errors: dict[str, str] = {}
         if user_input is not None:
-            self._merge(schema, user_input)
-            self._commit_draft()
-            return await self.async_step_init()
-        return self.async_show_form(step_id="entity_details", data_schema=schema)
+            errors = _validate_details(platform, user_input)
+            if not errors:
+                self._merge(schema, user_input)
+                self._commit_draft()
+                return await self.async_step_init()
+            self._draft |= user_input
+            schema = _details_schema(platform, self._draft)
+        return self.async_show_form(step_id="entity_details", data_schema=schema, errors=errors)
