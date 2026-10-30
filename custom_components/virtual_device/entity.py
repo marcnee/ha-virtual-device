@@ -6,12 +6,21 @@ from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import STATE_UNAVAILABLE, STATE_UNKNOWN
-from homeassistant.core import Event, EventStateChangedData, callback
+from homeassistant.core import Event, EventStateChangedData, State, callback
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.event import async_track_state_change_event
 
-from .const import CONF_DEVICE_NAME, CONF_ID, CONF_NAME, CONF_SOURCE_ENTITY, DOMAIN
+from .const import (
+    CONF_DEVICE_NAME,
+    CONF_ID,
+    CONF_NAME,
+    CONF_SOURCE_ATTRIBUTE,
+    CONF_SOURCE_ENTITY,
+    CONF_VALUE_TEMPLATE,
+    DOMAIN,
+)
+from .transform import ValueTransformer
 
 
 class VirtualEntity(Entity):
@@ -21,7 +30,10 @@ class VirtualEntity(Entity):
     _attr_has_entity_name = True
 
     def __init__(self, entry: ConfigEntry, config: dict[str, Any]) -> None:
+        self._config = config
         self._source: str = config[CONF_SOURCE_ENTITY]
+        self._attribute: str | None = config.get(CONF_SOURCE_ATTRIBUTE)
+        self._transform: ValueTransformer | None = None
         self._attr_name = config[CONF_NAME]
         self._attr_unique_id = f"{entry.entry_id}_{config[CONF_ID]}"
         self._attr_device_info = DeviceInfo(
@@ -31,6 +43,9 @@ class VirtualEntity(Entity):
 
     async def async_added_to_hass(self) -> None:
         """Follow the source entity."""
+        self._transform = ValueTransformer(
+            self.hass, self._config.get(CONF_VALUE_TEMPLATE), str(self._attr_name)
+        )
         self.async_on_remove(
             async_track_state_change_event(self.hass, [self._source], self._handle_source_event)
         )
@@ -47,10 +62,15 @@ class VirtualEntity(Entity):
         source_state = self.hass.states.get(self._source)
         self._attr_available = source_state is not None and source_state.state != STATE_UNAVAILABLE
         if self._attr_available:
-            unknown = source_state.state == STATE_UNKNOWN
-            self._apply(None if unknown else source_state.state)
+            self._apply(self._transform(self._raw_value(source_state), source_state))
+
+    def _raw_value(self, source_state: State) -> Any | None:
+        """The attribute or state of the source; None if it has no value."""
+        if self._attribute:
+            return source_state.attributes.get(self._attribute)
+        return None if source_state.state == STATE_UNKNOWN else source_state.state
 
     @callback
-    def _apply(self, value: str | None) -> None:
+    def _apply(self, value: Any | None) -> None:
         """Take over the source value (None = unknown). Implemented per platform."""
         raise NotImplementedError
