@@ -48,8 +48,10 @@ from .const import (
     CONF_ENTITIES,
     CONF_ICON,
     CONF_ID,
+    CONF_MANUFACTURER,
     CONF_MAX,
     CONF_MIN,
+    CONF_MODEL,
     CONF_NAME,
     CONF_OPTIONS,
     CONF_PICK,
@@ -77,6 +79,8 @@ _SOURCE_KEYS = (
     CONF_ATTRIBUTE_NAMES,
     CONF_ATTRIBUTE_TEMPLATES,
 )
+# Optional text properties of the device, besides its name.
+_DEVICE_KEYS = (CONF_MANUFACTURER, CONF_MODEL)
 _SHARED_KEYS = {CONF_ID, CONF_ICON, *_SOURCE_KEYS}
 
 
@@ -166,7 +170,8 @@ class VirtualDeviceSubentryFlow(ConfigSubentryFlow):
     """Create a virtual device or manage its entities."""
 
     def __init__(self) -> None:
-        self._device_name = ""
+        # Name, manufacturer and model of the device; loaded when first needed.
+        self._device: dict[str, str] | None = None
         self._entities: list[dict[str, Any]] | None = None
         self._draft: dict[str, Any] = {}
         # True while a new entity is created (as opposed to edited): then values suggested by
@@ -176,6 +181,17 @@ class VirtualDeviceSubentryFlow(ConfigSubentryFlow):
         self._source_done = False
         # What follows the "select attributes" step.
         self._proceed: Callable[[], Awaitable[SubentryFlowResult]] = self._show_basics
+
+    @property
+    def _device_settings(self) -> dict[str, str]:
+        if self._device is None:
+            if self.source == SOURCE_RECONFIGURE:
+                subentry = self._get_reconfigure_subentry()
+                saved = {k: subentry.data[k] for k in _DEVICE_KEYS if k in subentry.data}
+                self._device = {CONF_DEVICE_NAME: subentry.title} | saved
+            else:
+                self._device = {}
+        return self._device
 
     @property
     def _working_copy(self) -> list[dict[str, Any]]:
@@ -207,13 +223,39 @@ class VirtualDeviceSubentryFlow(ConfigSubentryFlow):
 
     # ---- start: new device or existing device --------------------------------------------
     async def async_step_user(self, user_input: dict[str, Any] | None = None) -> SubentryFlowResult:
-        """Ask for the name of the new device."""
+        """Ask for the name, manufacturer and model of the new device."""
         if user_input is not None:
-            self._device_name = user_input[CONF_DEVICE_NAME]
+            self._take_device_settings(user_input)
             return await self.async_step_init()
-        return self.async_show_form(
-            step_id="user", data_schema=vol.Schema({vol.Required(CONF_DEVICE_NAME): str})
+        return self._show_device_form("user")
+
+    async def async_step_device_settings(
+        self, user_input: dict[str, Any] | None = None
+    ) -> SubentryFlowResult:
+        """Change name, manufacturer and model of an existing device."""
+        if user_input is not None:
+            self._take_device_settings(user_input)
+            return await self.async_step_init()
+        return self._show_device_form("device_settings")
+
+    def _show_device_form(self, step_id: str) -> SubentryFlowResult:
+        current = self._device_settings
+        schema = vol.Schema(
+            {
+                vol.Required(
+                    CONF_DEVICE_NAME, description=_suggest(current, CONF_DEVICE_NAME)
+                ): TextSelector(),
+                vol.Optional(
+                    CONF_MANUFACTURER, description=_suggest(current, CONF_MANUFACTURER)
+                ): TextSelector(),
+                vol.Optional(CONF_MODEL, description=_suggest(current, CONF_MODEL)): TextSelector(),
+            }
         )
+        return self.async_show_form(step_id=step_id, data_schema=schema)
+
+    def _take_device_settings(self, user_input: dict[str, Any]) -> None:
+        """Cleared optional fields are removed."""
+        self._device = {k: v.strip() for k, v in user_input.items() if v and v.strip()}
 
     async def async_step_reconfigure(
         self, user_input: dict[str, Any] | None = None
@@ -227,17 +269,25 @@ class VirtualDeviceSubentryFlow(ConfigSubentryFlow):
         menu = ["add_from_source", "add_entity"]
         if self._working_copy:
             menu += ["edit_entity", "remove_entity"]
+        if self.source == SOURCE_RECONFIGURE:
+            menu.append("device_settings")
         menu.append("save")
         return self.async_show_menu(step_id="init", menu_options=menu)
 
     async def async_step_save(self, user_input: dict[str, Any] | None = None) -> SubentryFlowResult:
         """Store the working copy; the integration reloads afterwards."""
-        data = {CONF_ENTITIES: self._working_copy}
+        device = self._device_settings
+        data = {CONF_ENTITIES: self._working_copy} | {
+            k: device[k] for k in _DEVICE_KEYS if k in device
+        }
         if self.source == SOURCE_RECONFIGURE:
             return self.async_update_and_abort(
-                self._get_entry(), self._get_reconfigure_subentry(), data=data
+                self._get_entry(),
+                self._get_reconfigure_subentry(),
+                title=device[CONF_DEVICE_NAME],
+                data=data,
             )
-        return self.async_create_entry(title=self._device_name, data=data)
+        return self.async_create_entry(title=device[CONF_DEVICE_NAME], data=data)
 
     # ---- remove / pick an entity ------------------------------------------------------------
     def _pick_options(self) -> list[SelectOptionDict]:

@@ -16,12 +16,24 @@ from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity_platform import EntityPlatform, async_get_current_platform
 
 from .changes import Definition, plan_changes
-from .const import CONF_ENTITIES, CONF_ID, CONF_PLATFORM, SUBENTRY_TYPE_DEVICE
+from .const import (
+    CONF_ENTITIES,
+    CONF_ID,
+    CONF_MANUFACTURER,
+    CONF_MODEL,
+    CONF_PLATFORM,
+    SUBENTRY_TYPE_DEVICE,
+)
 from .entity import VirtualEntity, make_unique_id
 
 type EntityKey = tuple[str, str]  # (subentry ID of the device, ID of the entity definition)
 type EntityFactory = Callable[[ConfigSubentry, dict[str, Any]], VirtualEntity]
 type VirtualDeviceConfigEntry = ConfigEntry[EntityManager]
+
+
+def _device_identity(subentry: ConfigSubentry) -> tuple[Any, ...]:
+    """What the device of an entity is built from; entities are restarted when it changes."""
+    return (subentry.title, subentry.data.get(CONF_MANUFACTURER), subentry.data.get(CONF_MODEL))
 
 
 class EntityManager:
@@ -37,7 +49,7 @@ class EntityManager:
 
     def _wanted(self) -> dict[EntityKey, Definition]:
         return {
-            (subentry.subentry_id, config[CONF_ID]): (subentry.title, config)
+            (subentry.subentry_id, config[CONF_ID]): (_device_identity(subentry), config)
             for subentry in self._entry.subentries.values()
             if subentry.subentry_type == SUBENTRY_TYPE_DEVICE
             for config in subentry.data[CONF_ENTITIES]

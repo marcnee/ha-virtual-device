@@ -5,8 +5,9 @@ from __future__ import annotations
 from collections.abc import Hashable, Mapping
 from typing import Any
 
-# Everything an entity is built from: the title of its device and its own definition.
-Definition = tuple[str, Mapping[str, Any]]
+# Everything an entity is built from: what its device is made of (title, manufacturer, model, ...)
+# and its own definition. Any change of either restarts the entity.
+Definition = tuple[Any, Mapping[str, Any]]
 
 
 def plan_changes[K: Hashable](

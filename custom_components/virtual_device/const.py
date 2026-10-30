@@ -71,3 +71,7 @@ ATTR_FORWARDS_COMMANDS = "forwards_commands"
 
 # Attributes computed from the source: {attribute name: Jinja template}
 CONF_ATTRIBUTE_TEMPLATES = "attribute_templates"
+
+# Optional properties of a virtual device (stored in the data of its subentry)
+CONF_MANUFACTURER = "manufacturer"
+CONF_MODEL = "model"

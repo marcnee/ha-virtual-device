@@ -37,6 +37,7 @@ OPTION_FIELDS = {
         "action_press",
     ],
     "select_attributes": ["attribute_names"],
+    "device_settings": ["device_name", "manufacturer", "model"],
     "edit_entity": ["virtual_entity"],
     "remove_entity": ["virtual_entity"],
 }
@@ -57,7 +58,7 @@ def test_device_flow_entry_texts() -> None:
     assert DEVICE["abort"]["reconfigure_successful"]
     user = DEVICE["step"]["user"]
     assert user["title"]
-    assert user["data"]["device_name"]
+    assert set(user["data"]) >= {"device_name", "manufacturer", "model"}
 
 
 def test_device_menu_texts() -> None:
@@ -68,6 +69,7 @@ def test_device_menu_texts() -> None:
         "add_entity",
         "edit_entity",
         "remove_entity",
+        "device_settings",
         "save",
     }
 

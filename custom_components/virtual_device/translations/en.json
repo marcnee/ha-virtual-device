@@ -26,6 +26,7 @@
             "add_entity": "Add entity manually",
             "edit_entity": "Edit entity",
             "remove_entity": "Remove entities",
+            "device_settings": "Device settings (name, manufacturer, model)",
             "save": "Save and finish"
           }
         },
@@ -116,9 +117,15 @@
         },
         "user": {
           "title": "Add virtual device",
-          "description": "Name the virtual device. Then add its entities.",
+          "description": "Name the virtual device. Manufacturer and model are optional and only shown on the device page.",
           "data": {
-            "device_name": "Device name"
+            "device_name": "Device name",
+            "manufacturer": "Manufacturer",
+            "model": "Model"
+          },
+          "data_description": {
+            "manufacturer": "Optional. Shown on the device page.",
+            "model": "Optional. Shown on the device page."
           }
         },
         "select_attributes": {
@@ -126,6 +133,19 @@
           "description": "The attributes the source has right now are offered. You can also type the name of an attribute that does not exist yet.",
           "data": {
             "attribute_names": "Attributes to copy"
+          }
+        },
+        "device_settings": {
+          "title": "Device settings",
+          "description": "Name, manufacturer and model of the virtual device. Changes are saved with **Save and finish**.",
+          "data": {
+            "device_name": "Device name",
+            "manufacturer": "Manufacturer",
+            "model": "Model"
+          },
+          "data_description": {
+            "manufacturer": "Optional. Shown on the device page.",
+            "model": "Optional. Shown on the device page."
           }
         }
       },
