@@ -47,3 +47,6 @@ ACTION_KEYS = (
     CONF_ACTION_SELECT,
     CONF_ACTION_PRESS,
 )
+
+CONF_DEVICE_CLASS = "device_class"
+CONF_STATE_CLASS = "state_class"
