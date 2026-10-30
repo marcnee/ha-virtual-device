@@ -14,6 +14,7 @@ from custom_components.virtual_device.const import (
 )
 
 from .conftest import SetupDevice
+from .helpers import subentry_by_title
 
 SOURCE = "sensor.heatpump_status"
 STATUS = {
@@ -42,7 +43,8 @@ async def test_sensor_is_grouped_under_virtual_device(
     entity = er.async_get(hass).async_get("sensor.heat_pump_status")
     device = dr.async_get(hass).async_get(entity.device_id)
     assert device.name == "Heat pump"
-    assert (DOMAIN, entry.entry_id) in device.identifiers
+    subentry = subentry_by_title(entry, "Heat pump")
+    assert (DOMAIN, subentry.subentry_id) in device.identifiers
 
 
 async def test_source_entity_is_left_untouched(

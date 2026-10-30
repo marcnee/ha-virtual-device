@@ -4,6 +4,9 @@ from homeassistant.const import Platform
 
 DOMAIN = "virtual_device"
 
+# One config entry (the service) holds one subentry of this type per virtual device.
+SUBENTRY_TYPE_DEVICE = "device"
+
 PLATFORMS = [
     Platform.SENSOR,
     Platform.BINARY_SENSOR,

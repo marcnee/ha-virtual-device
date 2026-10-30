@@ -6,13 +6,13 @@ import logging
 from typing import Any
 
 from homeassistant.components.sensor import SensorEntity
-from homeassistant.config_entries import ConfigEntry
+from homeassistant.config_entries import ConfigEntry, ConfigSubentry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import CONF_DEVICE_CLASS, CONF_STATE_CLASS, CONF_UNIT
-from .entity import VirtualEntity, entity_configs
+from .entity import VirtualEntity, add_platform_entities
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -21,16 +21,14 @@ async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
 ) -> None:
     """Create the virtual sensors of a virtual device."""
-    async_add_entities(
-        VirtualSensor(entry, config) for config in entity_configs(entry, Platform.SENSOR)
-    )
+    add_platform_entities(entry, Platform.SENSOR, VirtualSensor, async_add_entities)
 
 
 class VirtualSensor(VirtualEntity, SensorEntity):
     """A sensor showing the (transformed) value of a source entity."""
 
-    def __init__(self, entry: ConfigEntry, config: dict[str, Any]) -> None:
-        super().__init__(entry, config)
+    def __init__(self, subentry: ConfigSubentry, config: dict[str, Any]) -> None:
+        super().__init__(subentry, config)
         self._attr_native_unit_of_measurement = config.get(CONF_UNIT)
         self._attr_device_class = config.get(CONF_DEVICE_CLASS)
         self._attr_state_class = config.get(CONF_STATE_CLASS)

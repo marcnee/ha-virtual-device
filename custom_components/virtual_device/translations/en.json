@@ -2,108 +2,125 @@
   "config": {
     "step": {
       "user": {
-        "title": "Create virtual device",
-        "description": "Name the virtual device. Add its entities afterwards via **Configure** on the integration entry.",
-        "data": {
-          "device_name": "Device name"
-        }
-      }
-    }
-  },
-  "options": {
-    "step": {
-      "init": {
-        "title": "Manage virtual device",
-        "description": "Changes only take effect after **Save and finish**.",
-        "menu_options": {
-          "add_from_source": "Add entity from a source (suggests settings)",
-          "add_entity": "Add entity manually",
-          "edit_entity": "Edit entity",
-          "remove_entity": "Remove entities",
-          "save": "Save and finish"
-        }
-      },
-      "add_entity": {
-        "title": "Type and name",
-        "description": "Any number of virtual entities can be built from the same source, for example a text and a number.",
-        "data": {
-          "platform": "Type",
-          "name": "Name",
-          "icon": "Icon"
-        },
-        "data_description": {
-          "icon": "Optional. Overrides the default icon."
-        }
-      },
-      "entity_source": {
-        "title": "Source and transformation",
-        "description": "The source entity is never modified. The template can use `value` (state or attribute), `state` and `attributes`.\n\nExamples:\n- `{{ value.split(' - ', 1)[-1] }}` turns \"18 - Running\" into \"Running\"\n- `{{ value.split(' - ')[0] }}` returns just \"18\"\n- `{{ value.startswith('18') }}` for a binary sensor",
-        "data": {
-          "source_entity": "Source entity",
-          "source_attribute": "Source attribute",
-          "value_template": "Value template"
-        },
-        "data_description": {
-          "source_entity": "An entity of any integration.",
-          "source_attribute": "Optional. Use this attribute instead of the state.",
-          "value_template": "Optional. Transforms the value. Without it the value is used unchanged."
-        }
-      },
-      "entity_details": {
-        "title": "Details",
-        "description": "Actions forward commands to the source integration. They can use `{{ value }}` (number), `{{ option }}` (select) and `{{ source_entity }}`.\n\nExample for a select: `{{ {'Running': 18, 'Standby': 19}[option] }}`",
-        "data": {
-          "min_value": "Minimum",
-          "max_value": "Maximum",
-          "step": "Step",
-          "unit_of_measurement": "Unit",
-          "options": "Options",
-          "action_on": "Action on turn on",
-          "action_off": "Action on turn off",
-          "action_set": "Action on set value",
-          "action_select": "Action on select option",
-          "action_press": "Action on press",
-          "device_class": "Device class",
-          "state_class": "State class"
-        },
-        "data_description": {
-          "options": "The value (after the template) must match one option exactly.",
-          "unit_of_measurement": "Optional. If a unit or class is set, the value must be numeric.",
-          "device_class": "Optional. Only for numeric sensors.",
-          "state_class": "Optional. Use measurement for values that go up and down."
-        }
-      },
-      "edit_entity": {
-        "title": "Edit entity",
-        "data": {
-          "virtual_entity": "Entity"
-        }
-      },
-      "remove_entity": {
-        "title": "Remove entities",
-        "description": "Only the virtual entities are deleted. The source entities stay untouched.",
-        "data": {
-          "virtual_entity": "Entities to remove"
-        }
-      },
-      "add_from_source": {
-        "title": "Choose the source",
-        "description": "Pick the entity to build on. Type, name, unit, range and options are suggested from it afterwards, you can change them. The source entity is never modified.\n\nExamples:\n- `{{ value.split(' - ', 1)[-1] }}` turns \"18 - Running\" into \"Running\"\n- `{{ value.split(' - ')[0] }}` returns just \"18\"\n- `{{ value.startswith('18') }}` for a binary sensor",
-        "data": {
-          "source_entity": "Source entity",
-          "source_attribute": "Source attribute",
-          "value_template": "Value template"
-        },
-        "data_description": {
-          "source_entity": "An entity of any integration.",
-          "source_attribute": "Optional. Use this attribute instead of the state.",
-          "value_template": "Optional. Transforms the value. Without it the value is used unchanged."
-        }
+        "title": "Virtual Device",
+        "description": "Set up the service. Afterwards add each virtual device with **Add virtual device**."
       }
     },
-    "error": {
-      "min_greater_max": "The maximum must be greater than the minimum.",
-      "options_required": "Provide at least one option."
+    "abort": {
+      "single_instance_allowed": "The service is already set up. Add virtual devices to the existing entry."
+    }
+  },
+  "config_subentries": {
+    "device": {
+      "entry_type": "Virtual device",
+      "initiate_flow": {
+        "user": "Add virtual device",
+        "reconfigure": "Edit virtual device"
+      },
+      "step": {
+        "init": {
+          "title": "Manage virtual device",
+          "description": "The device is only saved with **Save and finish**.",
+          "menu_options": {
+            "add_from_source": "Add entity from a source (suggests settings)",
+            "add_entity": "Add entity manually",
+            "edit_entity": "Edit entity",
+            "remove_entity": "Remove entities",
+            "save": "Save and finish"
+          }
+        },
+        "add_entity": {
+          "title": "Type and name",
+          "description": "Any number of virtual entities can be built from the same source, for example a text and a number.",
+          "data": {
+            "platform": "Type",
+            "name": "Name",
+            "icon": "Icon"
+          },
+          "data_description": {
+            "icon": "Optional. Overrides the default icon."
+          }
+        },
+        "entity_source": {
+          "title": "Source and transformation",
+          "description": "The source entity is never modified. The template can use `value` (state or attribute), `state` and `attributes`.\n\nExamples:\n- `{{ value.split(' - ', 1)[-1] }}` turns \"18 - Running\" into \"Running\"\n- `{{ value.split(' - ')[0] }}` returns just \"18\"\n- `{{ value.startswith('18') }}` for a binary sensor",
+          "data": {
+            "source_entity": "Source entity",
+            "source_attribute": "Source attribute",
+            "value_template": "Value template"
+          },
+          "data_description": {
+            "source_entity": "An entity of any integration.",
+            "source_attribute": "Optional. Use this attribute instead of the state.",
+            "value_template": "Optional. Transforms the value. Without it the value is used unchanged."
+          }
+        },
+        "entity_details": {
+          "title": "Details",
+          "description": "Actions forward commands to the source integration. They can use `{{ value }}` (number), `{{ option }}` (select) and `{{ source_entity }}`.\n\nExample for a select: `{{ {'Running': 18, 'Standby': 19}[option] }}`",
+          "data": {
+            "min_value": "Minimum",
+            "max_value": "Maximum",
+            "step": "Step",
+            "unit_of_measurement": "Unit",
+            "options": "Options",
+            "action_on": "Action on turn on",
+            "action_off": "Action on turn off",
+            "action_set": "Action on set value",
+            "action_select": "Action on select option",
+            "action_press": "Action on press",
+            "device_class": "Device class",
+            "state_class": "State class"
+          },
+          "data_description": {
+            "options": "The value (after the template) must match one option exactly.",
+            "unit_of_measurement": "Optional. If a unit or class is set, the value must be numeric.",
+            "device_class": "Optional. Only for numeric sensors.",
+            "state_class": "Optional. Use measurement for values that go up and down."
+          }
+        },
+        "edit_entity": {
+          "title": "Edit entity",
+          "data": {
+            "virtual_entity": "Entity"
+          }
+        },
+        "remove_entity": {
+          "title": "Remove entities",
+          "description": "Only the virtual entities are deleted. The source entities stay untouched.",
+          "data": {
+            "virtual_entity": "Entities to remove"
+          }
+        },
+        "add_from_source": {
+          "title": "Choose the source",
+          "description": "Pick the entity to build on. Type, name, unit, range and options are suggested from it afterwards, you can change them. The source entity is never modified.\n\nExamples:\n- `{{ value.split(' - ', 1)[-1] }}` turns \"18 - Running\" into \"Running\"\n- `{{ value.split(' - ')[0] }}` returns just \"18\"\n- `{{ value.startswith('18') }}` for a binary sensor",
+          "data": {
+            "source_entity": "Source entity",
+            "source_attribute": "Source attribute",
+            "value_template": "Value template"
+          },
+          "data_description": {
+            "source_entity": "An entity of any integration.",
+            "source_attribute": "Optional. Use this attribute instead of the state.",
+            "value_template": "Optional. Transforms the value. Without it the value is used unchanged."
+          }
+        },
+        "user": {
+          "title": "Add virtual device",
+          "description": "Name the virtual device. Then add its entities.",
+          "data": {
+            "device_name": "Device name"
+          }
+        }
+      },
+      "error": {
+        "min_greater_max": "The maximum must be greater than the minimum.",
+        "options_required": "Provide at least one option."
+      },
+      "abort": {
+        "reconfigure_successful": "The virtual device was saved."
+      }
     }
   },
   "selector": {

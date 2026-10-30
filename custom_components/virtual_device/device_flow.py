@@ -1,4 +1,4 @@
-"""Options flow: add, edit and remove the entities of a virtual device.
+"""Subentry flow: create a virtual device, or add, edit and remove its entities.
 
 Changes are collected in a working copy and only stored when "save" is chosen.
 """
@@ -10,7 +10,7 @@ from copy import deepcopy
 from typing import Any
 
 import voluptuous as vol
-from homeassistant.config_entries import ConfigFlowResult, OptionsFlow
+from homeassistant.config_entries import SOURCE_RECONFIGURE, ConfigSubentryFlow, SubentryFlowResult
 from homeassistant.const import Platform
 from homeassistant.helpers.selector import (
     ActionSelector,
@@ -35,6 +35,7 @@ from .const import (
     CONF_ACTION_SELECT,
     CONF_ACTION_SET,
     CONF_DEVICE_CLASS,
+    CONF_DEVICE_NAME,
     CONF_ENTITIES,
     CONF_ICON,
     CONF_ID,
@@ -121,10 +122,11 @@ def _validate_details(platform: str, user_input: dict[str, Any]) -> dict[str, st
     return errors
 
 
-class VirtualDeviceOptionsFlow(OptionsFlow):
-    """Manage the entities of a virtual device."""
+class VirtualDeviceSubentryFlow(ConfigSubentryFlow):
+    """Create a virtual device or manage its entities."""
 
     def __init__(self) -> None:
+        self._device_name = ""
         self._entities: list[dict[str, Any]] | None = None
         self._draft: dict[str, Any] = {}
         # True while a new entity is created (as opposed to edited): then values suggested by
@@ -136,7 +138,11 @@ class VirtualDeviceOptionsFlow(OptionsFlow):
     @property
     def _working_copy(self) -> list[dict[str, Any]]:
         if self._entities is None:
-            self._entities = deepcopy(list(self.config_entry.options[CONF_ENTITIES]))
+            if self.source == SOURCE_RECONFIGURE:
+                saved = self._get_reconfigure_subentry().data[CONF_ENTITIES]
+                self._entities = deepcopy(list(saved))
+            else:
+                self._entities = []
         return self._entities
 
     def _merge(self, schema: vol.Schema, user_input: dict[str, Any]) -> None:
@@ -157,8 +163,24 @@ class VirtualDeviceOptionsFlow(OptionsFlow):
             entities.append(draft)
         self._draft = {}
 
+    # ---- start: new device or existing device --------------------------------------------
+    async def async_step_user(self, user_input: dict[str, Any] | None = None) -> SubentryFlowResult:
+        """Ask for the name of the new device."""
+        if user_input is not None:
+            self._device_name = user_input[CONF_DEVICE_NAME]
+            return await self.async_step_init()
+        return self.async_show_form(
+            step_id="user", data_schema=vol.Schema({vol.Required(CONF_DEVICE_NAME): str})
+        )
+
+    async def async_step_reconfigure(
+        self, user_input: dict[str, Any] | None = None
+    ) -> SubentryFlowResult:
+        """Manage the entities of an existing device."""
+        return await self.async_step_init()
+
     # ---- menu -----------------------------------------------------------------------------
-    async def async_step_init(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
+    async def async_step_init(self, user_input: dict[str, Any] | None = None) -> SubentryFlowResult:
         """Main menu."""
         menu = ["add_from_source", "add_entity"]
         if self._working_copy:
@@ -166,9 +188,14 @@ class VirtualDeviceOptionsFlow(OptionsFlow):
         menu.append("save")
         return self.async_show_menu(step_id="init", menu_options=menu)
 
-    async def async_step_save(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
+    async def async_step_save(self, user_input: dict[str, Any] | None = None) -> SubentryFlowResult:
         """Store the working copy; the integration reloads afterwards."""
-        return self.async_create_entry(title="", data={CONF_ENTITIES: self._working_copy})
+        data = {CONF_ENTITIES: self._working_copy}
+        if self.source == SOURCE_RECONFIGURE:
+            return self.async_update_and_abort(
+                self._get_entry(), self._get_reconfigure_subentry(), data=data
+            )
+        return self.async_create_entry(title=self._device_name, data=data)
 
     # ---- remove / pick an entity ------------------------------------------------------------
     def _pick_options(self) -> list[SelectOptionDict]:
@@ -179,7 +206,7 @@ class VirtualDeviceOptionsFlow(OptionsFlow):
 
     async def async_step_remove_entity(
         self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
+    ) -> SubentryFlowResult:
         """Remove virtual entities (the source entities stay untouched)."""
         if user_input is not None:
             removed = set(user_input[CONF_PICK])
@@ -198,7 +225,7 @@ class VirtualDeviceOptionsFlow(OptionsFlow):
 
     async def async_step_edit_entity(
         self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
+    ) -> SubentryFlowResult:
         """Choose the entity to edit, then continue with its (prefilled) forms."""
         if user_input is not None:
             chosen = next(e for e in self._working_copy if e[CONF_ID] == user_input[CONF_PICK])
@@ -220,7 +247,7 @@ class VirtualDeviceOptionsFlow(OptionsFlow):
     # ---- add or edit an entity --------------------------------------------------------------
     async def async_step_add_entity(
         self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
+    ) -> SubentryFlowResult:
         """Platform and name."""
         if user_input is None:
             self._draft = {}
@@ -245,7 +272,7 @@ class VirtualDeviceOptionsFlow(OptionsFlow):
 
     async def async_step_add_from_source(
         self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
+    ) -> SubentryFlowResult:
         """Start with the source; type and name are then suggested from it."""
         if user_input is None:
             self._draft = {}
@@ -259,7 +286,7 @@ class VirtualDeviceOptionsFlow(OptionsFlow):
         self._draft |= {k: v for k, v in suggestions.items() if k in (CONF_NAME, CONF_PLATFORM)}
         return self._show_basics_form()
 
-    def _show_basics_form(self) -> ConfigFlowResult:
+    def _show_basics_form(self) -> SubentryFlowResult:
         schema = vol.Schema(
             {
                 vol.Required(
@@ -281,7 +308,7 @@ class VirtualDeviceOptionsFlow(OptionsFlow):
 
     async def async_step_entity_source(
         self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
+    ) -> SubentryFlowResult:
         """Source entity, source attribute and value template."""
         schema = self._source_schema()
         if user_input is not None:
@@ -304,7 +331,7 @@ class VirtualDeviceOptionsFlow(OptionsFlow):
             }
         )
 
-    async def _next_after_source(self) -> ConfigFlowResult:
+    async def _next_after_source(self) -> SubentryFlowResult:
         if _details_schema(self._draft[CONF_PLATFORM], self._draft) is not None:
             return await self.async_step_entity_details()
         self._commit_draft()
@@ -312,7 +339,7 @@ class VirtualDeviceOptionsFlow(OptionsFlow):
 
     async def async_step_entity_details(
         self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
+    ) -> SubentryFlowResult:
         """Platform specific settings, such as the actions forwarding commands."""
         platform = self._draft[CONF_PLATFORM]
         if user_input is None and self._adding:

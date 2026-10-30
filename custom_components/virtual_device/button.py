@@ -9,16 +9,14 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import CONF_ACTION_PRESS
-from .entity import VirtualEntity, entity_configs
+from .entity import VirtualEntity, add_platform_entities
 
 
 async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
 ) -> None:
     """Create the virtual buttons of a virtual device."""
-    async_add_entities(
-        VirtualButton(entry, config) for config in entity_configs(entry, Platform.BUTTON)
-    )
+    add_platform_entities(entry, Platform.BUTTON, VirtualButton, async_add_entities)
 
 
 class VirtualButton(VirtualEntity, ButtonEntity):

@@ -2,12 +2,28 @@
 
 from __future__ import annotations
 
+import logging
+
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
 
 from .const import CONF_ENTITIES, CONF_ID, CONF_PLATFORM, PLATFORMS
 from .entity import make_unique_id
+
+_LOGGER = logging.getLogger(__name__)
+
+
+async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    """Reject entries of the unreleased one-entry-per-device layout."""
+    if entry.version < 2:
+        _LOGGER.error(
+            "Virtual Device entry '%s' uses an outdated layout from before the first release: "
+            "delete this entry and add the virtual devices again",
+            entry.title,
+        )
+        return False
+    return True
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
@@ -32,8 +48,9 @@ def _remove_stale_entities(hass: HomeAssistant, entry: ConfigEntry) -> None:
     """Delete registry entries of virtual entities that are no longer configured."""
     registry = er.async_get(hass)
     wanted = {
-        (config[CONF_PLATFORM], make_unique_id(entry.entry_id, config[CONF_ID]))
-        for config in entry.options[CONF_ENTITIES]
+        (config[CONF_PLATFORM], make_unique_id(subentry.subentry_id, config[CONF_ID]))
+        for subentry in entry.subentries.values()
+        for config in subentry.data[CONF_ENTITIES]
     }
     for registered in er.async_entries_for_config_entry(registry, entry.entry_id):
         if (registered.domain, registered.unique_id) not in wanted:

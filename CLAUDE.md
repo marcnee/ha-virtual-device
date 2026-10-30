@@ -33,7 +33,9 @@ Run `ruff format .` and the tests before every commit.
 
 ## Layout
 
-- `custom_components/virtual_device/` the integration (`manifest.json`, `config_flow.py`, ...)
+- `custom_components/virtual_device/` the integration (`manifest.json`, ...)
+  - `config_flow.py` sets up the single service; `device_flow.py` is the subentry flow that
+    creates/edits one virtual device. Each virtual device is a config subentry of the service.
 - `tests/` pytest tests, one file per module
 - `DEVELOPMENT.md` how to test and try it, `ROADMAP.md` planned work
 

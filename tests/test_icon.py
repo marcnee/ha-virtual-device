@@ -6,7 +6,6 @@ from unittest.mock import ANY
 from homeassistant.core import HomeAssistant
 
 from custom_components.virtual_device.const import (
-    CONF_ENTITIES,
     CONF_ICON,
     CONF_ID,
     CONF_NAME,
@@ -15,7 +14,7 @@ from custom_components.virtual_device.const import (
 )
 
 from .conftest import SetupDevice
-from .test_options_flow import choose, submit, suggested
+from .helpers import choose, reconfigure, saved_entities, submit, suggested
 
 SOURCE = "sensor.heatpump_status"
 STATUS = {
@@ -38,7 +37,7 @@ async def test_icon_is_set_in_the_basics_form(
     hass: HomeAssistant, setup_device: SetupDevice
 ) -> None:
     entry = await setup_device([])
-    result = await hass.config_entries.options.async_init(entry.entry_id)
+    result = await reconfigure(hass, entry)
     result = await choose(hass, result["flow_id"], "add_entity")
 
     result = await submit(
@@ -49,7 +48,7 @@ async def test_icon_is_set_in_the_basics_form(
     result = await submit(hass, result["flow_id"], {CONF_SOURCE_ENTITY: SOURCE})
     result = await choose(hass, result["flow_id"], "save")
 
-    assert result["data"][CONF_ENTITIES][0] == {
+    assert saved_entities(entry)[0] == {
         CONF_ID: ANY,
         CONF_PLATFORM: "binary_sensor",
         CONF_NAME: "Running",
@@ -62,7 +61,7 @@ async def test_icon_can_be_edited_and_removed(
     hass: HomeAssistant, setup_device: SetupDevice
 ) -> None:
     entry = await setup_device([{**STATUS, CONF_ICON: "mdi:fan"}])
-    result = await hass.config_entries.options.async_init(entry.entry_id)
+    result = await reconfigure(hass, entry)
     result = await choose(hass, result["flow_id"], "edit_entity")
     result = await submit(hass, result["flow_id"], {"virtual_entity": "status"})
     assert suggested(result)[CONF_ICON] == "mdi:fan"
@@ -72,4 +71,4 @@ async def test_icon_can_be_edited_and_removed(
     result = await submit(hass, result["flow_id"], {CONF_SOURCE_ENTITY: SOURCE})
     result = await choose(hass, result["flow_id"], "save")
 
-    assert CONF_ICON not in result["data"][CONF_ENTITIES][0]
+    assert CONF_ICON not in saved_entities(entry)[0]

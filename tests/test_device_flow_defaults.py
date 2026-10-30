@@ -3,13 +3,13 @@
 from typing import Any
 from unittest.mock import ANY
 
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResult, FlowResultType
 
 from custom_components.virtual_device.const import (
     CONF_ACTION_SET,
     CONF_DEVICE_CLASS,
-    CONF_ENTITIES,
     CONF_ID,
     CONF_MAX,
     CONF_MIN,
@@ -23,7 +23,7 @@ from custom_components.virtual_device.const import (
 )
 
 from .conftest import SetupDevice
-from .test_options_flow import choose, submit, suggested
+from .helpers import choose, reconfigure, saved_entities, submit, suggested
 
 TARGET = "number.heatpump_target"
 TARGET_STATE = {
@@ -36,8 +36,8 @@ TARGET_STATE = {
 RANGE = {CONF_MIN: 10, CONF_MAX: 30, CONF_STEP: 0.5, CONF_UNIT: "°C"}
 
 
-async def start(hass: HomeAssistant, entry_id: str, menu_entry: str) -> FlowResult:
-    result = await hass.config_entries.options.async_init(entry_id)
+async def start(hass: HomeAssistant, entry: ConfigEntry, menu_entry: str) -> FlowResult:
+    result = await reconfigure(hass, entry)
     return await choose(hass, result["flow_id"], menu_entry)
 
 
@@ -46,7 +46,7 @@ async def test_add_from_source_asks_for_the_source_first(
 ) -> None:
     entry = await setup_device([])
 
-    result = await start(hass, entry.entry_id, "add_from_source")
+    result = await start(hass, entry, "add_from_source")
 
     assert result["type"] is FlowResultType.FORM
     assert result["step_id"] == "add_from_source"
@@ -57,7 +57,7 @@ async def test_add_from_source_prefills_type_name_and_number_range(
 ) -> None:
     hass.states.async_set(TARGET, "21.5", TARGET_STATE)
     entry = await setup_device([])
-    result = await start(hass, entry.entry_id, "add_from_source")
+    result = await start(hass, entry, "add_from_source")
 
     result = await submit(hass, result["flow_id"], {CONF_SOURCE_ENTITY: TARGET})
     assert result["step_id"] == "add_entity"
@@ -73,7 +73,7 @@ async def test_add_from_source_prefills_type_name_and_number_range(
     result = await submit(hass, result["flow_id"], {**RANGE, CONF_ACTION_SET: action})
     result = await choose(hass, result["flow_id"], "save")
 
-    assert result["data"][CONF_ENTITIES] == [
+    assert saved_entities(entry) == [
         {
             CONF_ID: ANY,
             CONF_PLATFORM: "number",
@@ -98,7 +98,7 @@ async def test_add_from_source_prefills_sensor_unit_and_classes(
         },
     )
     entry = await setup_device([])
-    result = await start(hass, entry.entry_id, "add_from_source")
+    result = await start(hass, entry, "add_from_source")
     result = await submit(hass, result["flow_id"], {CONF_SOURCE_ENTITY: "sensor.outside"})
 
     result = await submit(hass, result["flow_id"], {CONF_PLATFORM: "sensor", CONF_NAME: "Outside"})
@@ -115,7 +115,7 @@ async def test_add_from_source_keeps_the_template(
 ) -> None:
     hass.states.async_set("sensor.status", "18 - In Betrieb")
     entry = await setup_device([])
-    result = await start(hass, entry.entry_id, "add_from_source")
+    result = await start(hass, entry, "add_from_source")
     template = "{{ value.split(' - ', 1)[-1] }}"
     result = await submit(
         hass,
@@ -128,7 +128,7 @@ async def test_add_from_source_keeps_the_template(
     )
     result = await choose(hass, result["flow_id"], "save")
 
-    assert result["data"][CONF_ENTITIES][0][CONF_VALUE_TEMPLATE] == template
+    assert saved_entities(entry)[0][CONF_VALUE_TEMPLATE] == template
 
 
 async def test_add_from_source_with_a_button_does_not_keep_the_source(
@@ -136,21 +136,21 @@ async def test_add_from_source_with_a_button_does_not_keep_the_source(
 ) -> None:
     hass.states.async_set(TARGET, "21.5", TARGET_STATE)
     entry = await setup_device([])
-    result = await start(hass, entry.entry_id, "add_from_source")
+    result = await start(hass, entry, "add_from_source")
     result = await submit(hass, result["flow_id"], {CONF_SOURCE_ENTITY: TARGET})
 
     result = await submit(hass, result["flow_id"], {CONF_PLATFORM: "button", CONF_NAME: "Go"})
     result = await submit(hass, result["flow_id"], {})
     result = await choose(hass, result["flow_id"], "save")
 
-    assert CONF_SOURCE_ENTITY not in result["data"][CONF_ENTITIES][0]
+    assert CONF_SOURCE_ENTITY not in saved_entities(entry)[0]
 
 
 async def test_add_from_unknown_source_has_no_suggestions(
     hass: HomeAssistant, setup_device: SetupDevice
 ) -> None:
     entry = await setup_device([])
-    result = await start(hass, entry.entry_id, "add_from_source")
+    result = await start(hass, entry, "add_from_source")
 
     result = await submit(hass, result["flow_id"], {CONF_SOURCE_ENTITY: "sensor.not_there"})
 
@@ -162,7 +162,7 @@ async def test_manual_add_prefills_the_details_from_the_source(
 ) -> None:
     hass.states.async_set(TARGET, "21.5", TARGET_STATE)
     entry = await setup_device([])
-    result = await start(hass, entry.entry_id, "add_entity")
+    result = await start(hass, entry, "add_entity")
     result = await submit(hass, result["flow_id"], {CONF_PLATFORM: "number", CONF_NAME: "Target"})
 
     result = await submit(hass, result["flow_id"], {CONF_SOURCE_ENTITY: TARGET})
@@ -185,7 +185,7 @@ async def test_editing_does_not_overwrite_stored_settings_with_source_values(
         CONF_STEP: 1,
     }
     entry = await setup_device([stored])
-    result = await start(hass, entry.entry_id, "edit_entity")
+    result = await start(hass, entry, "edit_entity")
     result = await submit(hass, result["flow_id"], {"virtual_entity": "a"})
     result = await submit(hass, result["flow_id"], {CONF_PLATFORM: "number", CONF_NAME: "Target"})
     result = await submit(hass, result["flow_id"], {CONF_SOURCE_ENTITY: TARGET})
