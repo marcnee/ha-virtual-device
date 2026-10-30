@@ -7,8 +7,8 @@ from typing import Any
 
 import voluptuous as vol
 from homeassistant.config_entries import ConfigSubentry
-from homeassistant.const import ATTR_ENTITY_ID, ATTR_NAME, STATE_UNAVAILABLE, STATE_UNKNOWN
-from homeassistant.core import Event, EventStateChangedData, State, callback
+from homeassistant.const import ATTR_ENTITY_ID, ATTR_NAME, STATE_UNAVAILABLE
+from homeassistant.core import Event, EventStateChangedData, callback
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity import Entity
@@ -35,7 +35,7 @@ from .const import (
     DOMAIN,
     EVENT_COMMAND_FORWARDED,
 )
-from .transform import AttributeTransformer, ValueTransformer
+from .transform import AttributeTransformer, ValueTransformer, raw_value
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -122,19 +122,15 @@ class VirtualEntity(Entity):
         self._derived = {}
         if source_state is not None:
             self._derived = copied_attributes(self._config, source_state.attributes)
-            self._derived |= self._attribute_transform(self._raw_value(source_state), source_state)
+            self._derived |= self._attribute_transform(
+                raw_value(source_state, self._attribute), source_state
+            )
         # An icon of its own wins; otherwise the entity looks like its source.
         self._attr_icon = self._config.get(CONF_ICON) or (
             source_state.attributes.get("icon") if source_state else None
         )
         if self._attr_available:
-            self._apply(self._transform(self._raw_value(source_state), source_state))
-
-    def _raw_value(self, source_state: State) -> Any | None:
-        """The attribute or state of the source; None if it has no value."""
-        if self._attribute:
-            return source_state.attributes.get(self._attribute)
-        return None if source_state.state == STATE_UNKNOWN else source_state.state
+            self._apply(self._transform(raw_value(source_state, self._attribute), source_state))
 
     @callback
     def _apply(self, value: Any | None) -> None:

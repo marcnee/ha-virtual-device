@@ -6,6 +6,7 @@ import logging
 from collections.abc import Mapping
 from typing import Any
 
+from homeassistant.const import STATE_UNKNOWN
 from homeassistant.core import HomeAssistant, State
 from homeassistant.exceptions import TemplateError
 from homeassistant.helpers.template import Template
@@ -14,6 +15,18 @@ _LOGGER = logging.getLogger(__name__)
 
 # Rendered template results that mean "no value".
 _NO_VALUE = frozenset({"", "none", "unknown", "unavailable"})
+
+
+def raw_value(state: State, attribute: str | None) -> Any | None:
+    """The attribute or the state of the source; None if it has no value."""
+    if attribute:
+        return state.attributes.get(attribute)
+    return None if state.state == STATE_UNKNOWN else state.state
+
+
+def _variables(raw: Any, state: State) -> dict[str, Any]:
+    """What the templates can use."""
+    return {"value": raw, "state": state, "attributes": state.attributes}
 
 
 class ValueTransformer:
@@ -26,19 +39,22 @@ class ValueTransformer:
         self._template = Template(template, hass) if template else None
         self._name = name
 
-    def __call__(self, raw: Any, state: State) -> Any | None:
-        """Return the transformed value, or None if there is no value."""
+    def render(self, raw: Any, state: State) -> Any | None:
+        """The transformed value, or None if there is no value. A failing template raises."""
         if raw is None:
             return None
         if self._template is None:
             return raw
-        variables = {"value": raw, "state": state, "attributes": state.attributes}
+        result = self._template.async_render(_variables(raw, state), parse_result=False)
+        return None if result.strip().lower() in _NO_VALUE else result
+
+    def __call__(self, raw: Any, state: State) -> Any | None:
+        """Like `render`, but a failing template is logged and gives no value."""
         try:
-            result = self._template.async_render(variables, parse_result=False)
+            return self.render(raw, state)
         except TemplateError as err:
             _LOGGER.warning("Template of '%s' failed for value %r: %s", self._name, raw, err)
             return None
-        return None if result.strip().lower() in _NO_VALUE else result
 
 
 class AttributeTransformer:
@@ -48,17 +64,26 @@ class AttributeTransformer:
         self._templates = {attr: Template(text, hass) for attr, text in templates.items()}
         self._name = name
 
-    def __call__(self, raw: Any, state: State) -> dict[str, Any]:
-        """Attributes that rendered to a value; failing or empty ones are left out."""
-        variables = {"value": raw, "state": state, "attributes": state.attributes}
-        attributes: dict[str, Any] = {}
+    def render(self, raw: Any, state: State) -> dict[str, Any]:
+        """The result of every template; for a failing one the TemplateError itself."""
+        variables = _variables(raw, state)
+        rendered: dict[str, Any] = {}
         for attr, template in self._templates.items():
             try:
-                result = template.async_render(variables)
+                rendered[attr] = template.async_render(variables)
             except TemplateError as err:
-                _LOGGER.warning("Attribute template '%s' of '%s' failed: %s", attr, self._name, err)
-                continue
-            if result is not None:
+                rendered[attr] = err
+        return rendered
+
+    def __call__(self, raw: Any, state: State) -> dict[str, Any]:
+        """Attributes that rendered to a value; failing or empty ones are left out."""
+        attributes: dict[str, Any] = {}
+        for attr, result in self.render(raw, state).items():
+            if isinstance(result, TemplateError):
+                _LOGGER.warning(
+                    "Attribute template '%s' of '%s' failed: %s", attr, self._name, result
+                )
+            elif result is not None:
                 attributes[attr] = result
         return attributes
 
