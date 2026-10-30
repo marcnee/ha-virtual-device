@@ -24,6 +24,8 @@ from .const import (
     CONF_ATTRIBUTE_TEMPLATES,
     CONF_ICON,
     CONF_ID,
+    CONF_MANUFACTURER,
+    CONF_MODEL,
     CONF_NAME,
     CONF_SOURCE_ATTRIBUTE,
     CONF_SOURCE_ENTITY,
@@ -60,6 +62,9 @@ class VirtualEntity(Entity):
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, subentry.subentry_id)},
             name=subentry.title,
+            # Always set, so that clearing a value removes it from the device.
+            manufacturer=subentry.data.get(CONF_MANUFACTURER),
+            model=subentry.data.get(CONF_MODEL),
         )
 
     @property

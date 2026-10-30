@@ -15,6 +15,7 @@ Done
 - [x] Attribute templates (compute or rename attributes with Jinja, entered as YAML)
 - [x] The icon of the source is used unless an icon is configured
 - [x] Suggested actions that forward commands to the source (switch, number, select)
+- [x] Manufacturer and model per virtual device, editable together with its name
 - [x] Changes only restart the changed entities (no reload of the service)
 - [x] A broken action only disables that command
 - [x] English translations
