@@ -22,3 +22,7 @@ Next (test first)
 
 Ideas, not decided
 - Switch, number and select without a source entity (optimistic state)
+
+Decisions
+- One config entry (service) per virtual device. Config subentries (one service, many devices)
+  were considered and rejected for now: more work and a full reload per change, little gain.
