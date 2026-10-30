@@ -15,6 +15,7 @@ from homeassistant.const import Platform
 from homeassistant.helpers.selector import (
     ActionSelector,
     EntitySelector,
+    SelectOptionDict,
     SelectSelector,
     SelectSelectorConfig,
     SelectSelectorMode,
@@ -27,6 +28,7 @@ from .const import (
     CONF_ENTITIES,
     CONF_ID,
     CONF_NAME,
+    CONF_PICK,
     CONF_PLATFORM,
     CONF_SOURCE_ATTRIBUTE,
     CONF_SOURCE_ENTITY,
@@ -100,29 +102,81 @@ class VirtualDeviceOptionsFlow(OptionsFlow):
         """Store the working copy; the integration reloads afterwards."""
         return self.async_create_entry(title="", data={CONF_ENTITIES: self._working_copy})
 
-    # ---- add an entity --------------------------------------------------------------------
+    # ---- remove / pick an entity ------------------------------------------------------------
+    def _pick_options(self) -> list[SelectOptionDict]:
+        return [
+            SelectOptionDict(value=e[CONF_ID], label=f"{e[CONF_NAME]} ({e[CONF_PLATFORM]})")
+            for e in self._working_copy
+        ]
+
+    async def async_step_remove_entity(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Remove virtual entities (the source entities stay untouched)."""
+        if user_input is not None:
+            removed = set(user_input[CONF_PICK])
+            self._entities = [e for e in self._working_copy if e[CONF_ID] not in removed]
+            return await self.async_step_init()
+        schema = vol.Schema(
+            {
+                vol.Required(CONF_PICK): SelectSelector(
+                    SelectSelectorConfig(
+                        options=self._pick_options(), multiple=True, mode=SelectSelectorMode.LIST
+                    )
+                )
+            }
+        )
+        return self.async_show_form(step_id="remove_entity", data_schema=schema)
+
+    async def async_step_edit_entity(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Choose the entity to edit, then continue with its (prefilled) forms."""
+        if user_input is not None:
+            chosen = next(e for e in self._working_copy if e[CONF_ID] == user_input[CONF_PICK])
+            self._draft = deepcopy(chosen)
+            return self._show_basics_form()
+        schema = vol.Schema(
+            {
+                vol.Required(CONF_PICK): SelectSelector(
+                    SelectSelectorConfig(
+                        options=self._pick_options(), mode=SelectSelectorMode.DROPDOWN
+                    )
+                )
+            }
+        )
+        return self.async_show_form(step_id="edit_entity", data_schema=schema)
+
+    # ---- add or edit an entity --------------------------------------------------------------
     async def async_step_add_entity(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         """Platform and name."""
-        if user_input is not None:
-            self._draft = {
-                CONF_PLATFORM: user_input[CONF_PLATFORM],
-                CONF_NAME: user_input[CONF_NAME],
-            }
-            if user_input[CONF_PLATFORM] == Platform.BUTTON:
-                return await self.async_step_entity_details()
-            return await self.async_step_entity_source()
+        if user_input is None:
+            self._draft = {}
+            return self._show_basics_form()
+        platform = user_input[CONF_PLATFORM]
+        if self._draft.get(CONF_PLATFORM, platform) != platform:
+            # Platform changed while editing: keep only what all platforms share.
+            self._draft = {k: v for k, v in self._draft.items() if k in _SHARED_KEYS}
+        self._draft |= {CONF_PLATFORM: platform, CONF_NAME: user_input[CONF_NAME]}
+        if platform == Platform.BUTTON:
+            return await self.async_step_entity_details()
+        return await self.async_step_entity_source()
+
+    def _show_basics_form(self) -> ConfigFlowResult:
         schema = vol.Schema(
             {
-                vol.Required(CONF_PLATFORM, default=Platform.SENSOR): SelectSelector(
+                vol.Required(
+                    CONF_PLATFORM, default=self._draft.get(CONF_PLATFORM, Platform.SENSOR)
+                ): SelectSelector(
                     SelectSelectorConfig(
                         options=[str(p) for p in PLATFORMS],
                         mode=SelectSelectorMode.DROPDOWN,
                         translation_key="platform",
                     )
                 ),
-                vol.Required(CONF_NAME): TextSelector(),
+                vol.Required(CONF_NAME, default=self._draft.get(CONF_NAME, "")): TextSelector(),
             }
         )
         return self.async_show_form(step_id="add_entity", data_schema=schema)

@@ -13,6 +13,7 @@ from custom_components.virtual_device.const import (
     CONF_ID,
     CONF_NAME,
     CONF_PLATFORM,
+    CONF_SOURCE_ATTRIBUTE,
     CONF_SOURCE_ENTITY,
     CONF_VALUE_TEMPLATE,
 )
@@ -131,3 +132,85 @@ async def test_nothing_is_saved_before_save_is_chosen(
     await submit(hass, result["flow_id"], {CONF_SOURCE_ENTITY: SOURCE})
 
     assert entry.options == {CONF_ENTITIES: []}
+
+
+def stored(**extra: Any) -> dict[str, Any]:
+    return {
+        CONF_ID: "a",
+        CONF_PLATFORM: "sensor",
+        CONF_NAME: "Status",
+        CONF_SOURCE_ENTITY: SOURCE,
+        CONF_VALUE_TEMPLATE: STRIP_CODE,
+        **extra,
+    }
+
+
+def suggested(result: FlowResult) -> dict[str, Any]:
+    """Prefilled values of a form (suggested values and defaults)."""
+    values = {}
+    for key in result["data_schema"].schema:
+        if key.description and "suggested_value" in key.description:
+            values[str(key)] = key.description["suggested_value"]
+        elif callable(key.default):
+            values[str(key)] = key.default()
+    return values
+
+
+async def test_remove_entities(hass: HomeAssistant, setup_device: SetupDevice) -> None:
+    entry = await setup_device([stored(), stored(**{CONF_ID: "b", CONF_NAME: "Second"})])
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+
+    result = await choose(hass, result["flow_id"], "remove_entity")
+    assert result["step_id"] == "remove_entity"
+    result = await submit(hass, result["flow_id"], {"virtual_entity": ["a"]})
+    assert result["type"] is FlowResultType.MENU
+    result = await choose(hass, result["flow_id"], "save")
+
+    assert [e[CONF_ID] for e in result["data"][CONF_ENTITIES]] == ["b"]
+
+
+async def test_editing_prefills_the_forms_and_keeps_the_id(
+    hass: HomeAssistant, setup_device: SetupDevice
+) -> None:
+    entry = await setup_device([stored()])
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+
+    result = await choose(hass, result["flow_id"], "edit_entity")
+    assert result["step_id"] == "edit_entity"
+    result = await submit(hass, result["flow_id"], {"virtual_entity": "a"})
+    assert result["step_id"] == "add_entity"
+    assert suggested(result) == {CONF_PLATFORM: "sensor", CONF_NAME: "Status"}
+    result = await submit(hass, result["flow_id"], {CONF_PLATFORM: "sensor", CONF_NAME: "Renamed"})
+    assert result["step_id"] == "entity_source"
+    assert suggested(result) == {
+        CONF_SOURCE_ENTITY: SOURCE,
+        CONF_SOURCE_ATTRIBUTE: None,
+        CONF_VALUE_TEMPLATE: STRIP_CODE,
+    }
+    result = await submit(hass, result["flow_id"], {CONF_SOURCE_ENTITY: SOURCE})
+    result = await choose(hass, result["flow_id"], "save")
+
+    assert result["data"][CONF_ENTITIES] == [
+        {CONF_ID: "a", CONF_PLATFORM: "sensor", CONF_NAME: "Renamed", CONF_SOURCE_ENTITY: SOURCE}
+    ]
+
+
+async def test_changing_the_platform_keeps_the_source_settings(
+    hass: HomeAssistant, setup_device: SetupDevice
+) -> None:
+    entry = await setup_device([stored()])
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    result = await choose(hass, result["flow_id"], "edit_entity")
+    result = await submit(hass, result["flow_id"], {"virtual_entity": "a"})
+
+    result = await submit(
+        hass, result["flow_id"], {CONF_PLATFORM: "binary_sensor", CONF_NAME: "Status"}
+    )
+    assert suggested(result)[CONF_VALUE_TEMPLATE] == STRIP_CODE
+    result = await submit(
+        hass, result["flow_id"], {CONF_SOURCE_ENTITY: SOURCE, CONF_VALUE_TEMPLATE: STRIP_CODE}
+    )
+    result = await choose(hass, result["flow_id"], "save")
+
+    assert result["data"][CONF_ENTITIES][0][CONF_PLATFORM] == "binary_sensor"
+    assert result["data"][CONF_ENTITIES][0][CONF_ID] == "a"
