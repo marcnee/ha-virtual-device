@@ -16,7 +16,6 @@ SOURCE_FIELDS = [
     "source_attribute",
     "value_template",
     "copy_attributes",
-    "attribute_names",
     "attribute_templates",
 ]
 OPTION_FIELDS = {
@@ -37,6 +36,7 @@ OPTION_FIELDS = {
         "action_select",
         "action_press",
     ],
+    "select_attributes": ["attribute_names"],
     "edit_entity": ["virtual_entity"],
     "remove_entity": ["virtual_entity"],
 }

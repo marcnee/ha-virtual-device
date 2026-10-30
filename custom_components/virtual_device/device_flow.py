@@ -6,6 +6,7 @@ Changes are collected in a working copy and only stored when "save" is chosen.
 from __future__ import annotations
 
 import uuid
+from collections.abc import Awaitable, Callable
 from copy import deepcopy
 from typing import Any
 
@@ -32,7 +33,7 @@ from homeassistant.helpers.selector import (
 )
 from homeassistant.helpers.template import Template
 
-from .attributes import attribute_template_error
+from .attributes import RESERVED_ATTRIBUTES, attribute_template_error
 from .const import (
     CONF_ACTION_OFF,
     CONF_ACTION_ON,
@@ -145,10 +146,6 @@ def _validate_source(
     hass: HomeAssistant, user_input: dict[str, Any]
 ) -> tuple[dict[str, str], dict[str, str]]:
     """Form errors for the source fields, and the placeholders their texts need."""
-    if user_input.get(CONF_COPY_ATTRIBUTES) == COPY_SELECTED and not user_input.get(
-        CONF_ATTRIBUTE_NAMES
-    ):
-        return {CONF_ATTRIBUTE_NAMES: "attribute_names_required"}, {}
     templates = user_input.get(CONF_ATTRIBUTE_TEMPLATES)
     if templates:
         if problem := attribute_template_error(templates):
@@ -177,6 +174,8 @@ class VirtualDeviceSubentryFlow(ConfigSubentryFlow):
         self._adding = False
         # True when the source was already asked for, in the "add from source" path.
         self._source_done = False
+        # What follows the "select attributes" step.
+        self._proceed: Callable[[], Awaitable[SubentryFlowResult]] = self._show_basics
 
     @property
     def _working_copy(self) -> list[dict[str, Any]]:
@@ -329,7 +328,7 @@ class VirtualDeviceSubentryFlow(ConfigSubentryFlow):
         self._take_source(user_input)
         suggestions = defaults_from_source(self.hass.states.get(user_input[CONF_SOURCE_ENTITY]))
         self._draft |= {k: v for k, v in suggestions.items() if k in (CONF_NAME, CONF_PLATFORM)}
-        return self._show_basics_form()
+        return await self._after_source_form(self._show_basics)
 
     def _show_basics_form(self) -> SubentryFlowResult:
         schema = vol.Schema(
@@ -361,8 +360,49 @@ class VirtualDeviceSubentryFlow(ConfigSubentryFlow):
                 self._draft |= user_input
                 return self._show_source_form("entity_source", errors, placeholders)
             self._take_source(user_input)
-            return await self._next_after_source()
+            return await self._after_source_form(self._next_after_source)
         return self._show_source_form("entity_source")
+
+    async def _after_source_form(
+        self, proceed: Callable[[], Awaitable[SubentryFlowResult]]
+    ) -> SubentryFlowResult:
+        """Ask for the attributes to copy if they are selected, then go on."""
+        if self._draft.get(CONF_COPY_ATTRIBUTES) != COPY_SELECTED:
+            self._draft.pop(CONF_ATTRIBUTE_NAMES, None)
+            return await proceed()
+        self._proceed = proceed
+        return await self.async_step_select_attributes()
+
+    async def async_step_select_attributes(
+        self, user_input: dict[str, Any] | None = None
+    ) -> SubentryFlowResult:
+        """Choose the attributes to copy, offering the ones the source has."""
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            if user_input[CONF_ATTRIBUTE_NAMES]:
+                self._draft[CONF_ATTRIBUTE_NAMES] = user_input[CONF_ATTRIBUTE_NAMES]
+                return await self._proceed()
+            errors[CONF_ATTRIBUTE_NAMES] = "attribute_names_required"
+        source = self.hass.states.get(self._draft.get(CONF_SOURCE_ENTITY, ""))
+        offered = sorted(set(source.attributes) - RESERVED_ATTRIBUTES) if source else []
+        schema = vol.Schema(
+            {
+                vol.Required(
+                    CONF_ATTRIBUTE_NAMES, description=_suggest(self._draft, CONF_ATTRIBUTE_NAMES)
+                ): SelectSelector(
+                    SelectSelectorConfig(
+                        options=offered,
+                        multiple=True,
+                        custom_value=True,
+                        mode=SelectSelectorMode.DROPDOWN,
+                    )
+                )
+            }
+        )
+        return self.async_show_form(step_id="select_attributes", data_schema=schema, errors=errors)
+
+    async def _show_basics(self) -> SubentryFlowResult:
+        return self._show_basics_form()
 
     def _show_source_form(
         self,
@@ -378,12 +418,13 @@ class VirtualDeviceSubentryFlow(ConfigSubentryFlow):
         )
 
     def _take_source(self, user_input: dict[str, Any]) -> None:
-        """Take the source form into the draft; names only matter when attributes are selected."""
+        """Take the source form into the draft; names stay only while attributes are selected."""
+        names = self._draft.get(CONF_ATTRIBUTE_NAMES)
         for key in _SOURCE_KEYS:
             self._draft.pop(key, None)
         self._draft |= user_input
-        if user_input.get(CONF_COPY_ATTRIBUTES) != COPY_SELECTED:
-            self._draft.pop(CONF_ATTRIBUTE_NAMES, None)
+        if user_input.get(CONF_COPY_ATTRIBUTES) == COPY_SELECTED and names:
+            self._draft[CONF_ATTRIBUTE_NAMES] = names  # shown again as the current choice
 
     def _source_schema(self) -> vol.Schema:
         return vol.Schema(
@@ -406,9 +447,6 @@ class VirtualDeviceSubentryFlow(ConfigSubentryFlow):
                         translation_key="copy_attributes",
                     )
                 ),
-                vol.Optional(
-                    CONF_ATTRIBUTE_NAMES, description=_suggest(self._draft, CONF_ATTRIBUTE_NAMES)
-                ): TextSelector(TextSelectorConfig(multiple=True)),
                 vol.Optional(
                     CONF_ATTRIBUTE_TEMPLATES,
                     description=_suggest(self._draft, CONF_ATTRIBUTE_TEMPLATES),
