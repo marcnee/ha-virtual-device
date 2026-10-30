@@ -35,7 +35,8 @@
                     "remoteRoot": "/app"
                 }
             ],
-            "justMyCode": false
+            "justMyCode": false,
+            "preLaunchTask": "Docker: debug tests"
         },
         {
             "name": "Attach: Home Assistant in Docker",
@@ -51,7 +52,8 @@
                     "remoteRoot": "/config/custom_components/virtual_device"
                 }
             ],
-            "justMyCode": false
+            "justMyCode": false,
+            "preLaunchTask": "Docker: Home Assistant with debugger"
         }
     ]
 }

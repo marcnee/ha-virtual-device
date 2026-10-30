@@ -55,12 +55,9 @@ def test_an_attach_config_matches_the_compose_service_it_connects_to(config) -> 
 
 
 def test_the_test_debug_service_waits_for_the_debugger() -> None:
-    entrypoint = COMPOSE["test-debug"]["entrypoint"]
-    assert entrypoint[:3] == ["python", "-m", "debugpy"]
-    assert "--wait-for-client" in entrypoint
-    assert entrypoint[-2:] == ["-m", "pytest"]
-    assert "0.0.0.0:5678" in entrypoint
-    assert COMPOSE["test-debug"]["build"]["dockerfile"] == "Dockerfile.test"
+    service = COMPOSE["test-debug"]
+    assert service["entrypoint"] == ["python", "scripts/debug_entry.py", "5678", "--wait", "pytest"]
+    assert service["build"]["dockerfile"] == "Dockerfile.test"
     assert "debugpy==" in (ROOT / "requirements_test.txt").read_text()
 
 
@@ -69,9 +66,29 @@ def test_the_home_assistant_debug_service_runs_the_pinned_version_with_debugpy()
     dockerfile = (ROOT / service["build"]["dockerfile"]).read_text()
     assert f"FROM {COMPOSE['homeassistant']['image']}" in dockerfile
     assert "debugpy" in dockerfile
+    assert "COPY scripts/debug_entry.py /debug_entry.py" in dockerfile
     assert service["profiles"] == ["dev"]
     assert service["volumes"] == COMPOSE["homeassistant"]["volumes"]
-    assert "0.0.0.0:5679" in service["entrypoint"]
+    assert service["entrypoint"] == [
+        "python3",
+        "/debug_entry.py",
+        "5679",
+        "homeassistant",
+        "--config",
+        "/config",
+    ]
+
+
+@pytest.mark.parametrize("config", attach_configs(), ids=lambda c: c["name"])
+def test_an_attach_config_starts_its_container_and_waits_until_the_debugger_listens(config) -> None:
+    task = next(t for t in TASKS["tasks"] if t["label"] == config["preLaunchTask"])
+    background = task["problemMatcher"]["background"]
+    assert task["isBackground"] is True
+    assert background["activeOnStart"] is True
+    # What scripts/debug_entry.py prints (its own test checks the wording) once it listens.
+    port = config["connect"]["port"]
+    assert re.search(background["endsPattern"], f"Debugger listening on port {port}")
+    assert not re.search(background["endsPattern"], "Debugger listening on port 1")
 
 
 def task_commands() -> list[str]:
@@ -89,7 +106,7 @@ def test_tasks_only_use_compose_services_and_inputs_that_exist() -> None:
     inputs = {i["id"] for i in TASKS["inputs"]}
     for command in task_commands():
         for service in re.findall(
-            r"(?:run --rm(?: --service-ports)?|up|restart) ([\w-]+)", command
+            r"(?:run --rm(?: --service-ports)?|up(?: --build)?|restart) ([\w-]+)", command
         ):
             assert service in COMPOSE, command
         for name in re.findall(r"\$\{input:(\w+)\}", command):
@@ -103,3 +120,8 @@ def test_the_recommended_extensions_include_the_debugger() -> None:
 def test_vscode_settings_are_not_ignored_by_git() -> None:
     ignored = (ROOT / ".gitignore").read_text().split()
     assert ".vscode/" not in ignored
+
+
+def test_the_debug_instance_is_rebuilt_when_its_image_changed() -> None:
+    task = next(t for t in TASKS["tasks"] if t["label"] == "Docker: Home Assistant with debugger")
+    assert "up --build homeassistant-debug" in task["command"]

@@ -68,13 +68,6 @@
             "problemMatcher": []
         },
         {
-            "label": "Docker: debug tests (then attach)",
-            "type": "shell",
-            "command": "docker compose run --rm --service-ports test-debug ${input:pytestArgs}",
-            "problemMatcher": [],
-            "isBackground": true
-        },
-        {
             "label": "Docker: Home Assistant",
             "type": "shell",
             "command": "docker compose --profile dev up homeassistant",
@@ -82,11 +75,44 @@
             "isBackground": true
         },
         {
-            "label": "Docker: Home Assistant with debugger (then attach)",
+            "label": "Docker: debug tests",
             "type": "shell",
-            "command": "docker compose --profile dev up homeassistant-debug",
-            "problemMatcher": [],
-            "isBackground": true
+            "command": "docker compose run --rm --service-ports test-debug ${input:pytestArgs}",
+            "isBackground": true,
+            "problemMatcher": {
+                "owner": "docker-debug",
+                "pattern": {
+                    "regexp": ".",
+                    "file": 1,
+                    "location": 2,
+                    "message": 3
+                },
+                "background": {
+                    "activeOnStart": true,
+                    "beginsPattern": "^$never$",
+                    "endsPattern": "Debugger listening on port 5678"
+                }
+            }
+        },
+        {
+            "label": "Docker: Home Assistant with debugger",
+            "type": "shell",
+            "command": "docker compose --profile dev up --build homeassistant-debug",
+            "isBackground": true,
+            "problemMatcher": {
+                "owner": "docker-debug",
+                "pattern": {
+                    "regexp": ".",
+                    "file": 1,
+                    "location": 2,
+                    "message": 3
+                },
+                "background": {
+                    "activeOnStart": true,
+                    "beginsPattern": "^$never$",
+                    "endsPattern": "Debugger listening on port 5679"
+                }
+            }
         }
     ]
 }

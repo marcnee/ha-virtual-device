@@ -22,7 +22,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.test
-    entrypoint: ["python", "-m", "debugpy", "--listen", "0.0.0.0:5678", "--wait-for-client", "-m", "pytest"]
+    entrypoint: ["python", "scripts/debug_entry.py", "5678", "--wait", "pytest"]
     ports:
       - "5678:5678"
     volumes:
@@ -80,15 +80,14 @@ services:
     ports:
       - "8123:8123"
 
-  # The same with a debugger for VS Code ("Attach: Home Assistant in Docker", port 5679):
-  # docker compose --profile dev up homeassistant-debug
+  # The same with a debugger for VS Code ("Attach: Home Assistant in Docker", port 5679), which
+  # starts it as its pre-launch task. By hand: docker compose --profile dev up homeassistant-debug
   homeassistant-debug:
     <<: *dev-instance
     build:
       context: .
       dockerfile: Dockerfile.dev
-    entrypoint:
-      ["python3", "-m", "debugpy", "--listen", "0.0.0.0:5679", "-m", "homeassistant", "--config", "/config"]
+    entrypoint: ["python3", "/debug_entry.py", "5679", "homeassistant", "--config", "/config"]
     ports:
       - "8123:8123"
       - "5679:5679"
