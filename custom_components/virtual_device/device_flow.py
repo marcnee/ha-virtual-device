@@ -12,6 +12,8 @@ from typing import Any
 import voluptuous as vol
 from homeassistant.config_entries import SOURCE_RECONFIGURE, ConfigSubentryFlow, SubentryFlowResult
 from homeassistant.const import Platform
+from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import TemplateError
 from homeassistant.helpers.selector import (
     ActionSelector,
     EntitySelector,
@@ -19,6 +21,7 @@ from homeassistant.helpers.selector import (
     NumberSelector,
     NumberSelectorConfig,
     NumberSelectorMode,
+    ObjectSelector,
     SelectOptionDict,
     SelectSelector,
     SelectSelectorConfig,
@@ -27,7 +30,9 @@ from homeassistant.helpers.selector import (
     TextSelector,
     TextSelectorConfig,
 )
+from homeassistant.helpers.template import Template
 
+from .attributes import attribute_template_error
 from .const import (
     CONF_ACTION_OFF,
     CONF_ACTION_ON,
@@ -35,6 +40,7 @@ from .const import (
     CONF_ACTION_SELECT,
     CONF_ACTION_SET,
     CONF_ATTRIBUTE_NAMES,
+    CONF_ATTRIBUTE_TEMPLATES,
     CONF_COPY_ATTRIBUTES,
     CONF_DEVICE_CLASS,
     CONF_DEVICE_NAME,
@@ -68,6 +74,7 @@ _SOURCE_KEYS = (
     CONF_VALUE_TEMPLATE,
     CONF_COPY_ATTRIBUTES,
     CONF_ATTRIBUTE_NAMES,
+    CONF_ATTRIBUTE_TEMPLATES,
 )
 _SHARED_KEYS = {CONF_ID, CONF_ICON, *_SOURCE_KEYS}
 
@@ -134,13 +141,28 @@ def _validate_details(platform: str, user_input: dict[str, Any]) -> dict[str, st
     return errors
 
 
-def _validate_source(user_input: dict[str, Any]) -> dict[str, str]:
-    """Form errors for the source fields."""
+def _validate_source(
+    hass: HomeAssistant, user_input: dict[str, Any]
+) -> tuple[dict[str, str], dict[str, str]]:
+    """Form errors for the source fields, and the placeholders their texts need."""
     if user_input.get(CONF_COPY_ATTRIBUTES) == COPY_SELECTED and not user_input.get(
         CONF_ATTRIBUTE_NAMES
     ):
-        return {CONF_ATTRIBUTE_NAMES: "attribute_names_required"}
-    return {}
+        return {CONF_ATTRIBUTE_NAMES: "attribute_names_required"}, {}
+    templates = user_input.get(CONF_ATTRIBUTE_TEMPLATES)
+    if templates:
+        if problem := attribute_template_error(templates):
+            error, attribute = problem
+            return {CONF_ATTRIBUTE_TEMPLATES: error}, {"attribute": attribute}
+        for attribute, text in templates.items():
+            try:
+                Template(text, hass).ensure_valid()
+            except TemplateError as err:
+                return (
+                    {CONF_ATTRIBUTE_TEMPLATES: "attribute_template_invalid"},
+                    {"attribute": attribute, "error": str(err)},
+                )
+    return {}, {}
 
 
 class VirtualDeviceSubentryFlow(ConfigSubentryFlow):
@@ -173,7 +195,7 @@ class VirtualDeviceSubentryFlow(ConfigSubentryFlow):
         self._draft.update(user_input)
 
     def _commit_draft(self) -> None:
-        draft = {k: v for k, v in self._draft.items() if v not in (None, "", [])}
+        draft = {k: v for k, v in self._draft.items() if v not in (None, "", [], {})}
         draft.setdefault(CONF_ID, uuid.uuid4().hex[:8])
         entities = self._working_copy
         for index, existing in enumerate(entities):
@@ -300,9 +322,10 @@ class VirtualDeviceSubentryFlow(ConfigSubentryFlow):
             self._adding = True
             self._source_done = True
             return self._show_source_form("add_from_source")
-        if errors := _validate_source(user_input):
+        errors, placeholders = _validate_source(self.hass, user_input)
+        if errors:
             self._draft |= user_input
-            return self._show_source_form("add_from_source", errors)
+            return self._show_source_form("add_from_source", errors, placeholders)
         self._take_source(user_input)
         suggestions = defaults_from_source(self.hass.states.get(user_input[CONF_SOURCE_ENTITY]))
         self._draft |= {k: v for k, v in suggestions.items() if k in (CONF_NAME, CONF_PLATFORM)}
@@ -333,18 +356,25 @@ class VirtualDeviceSubentryFlow(ConfigSubentryFlow):
     ) -> SubentryFlowResult:
         """Source entity, source attribute, value template and copied attributes."""
         if user_input is not None:
-            if errors := _validate_source(user_input):
+            errors, placeholders = _validate_source(self.hass, user_input)
+            if errors:
                 self._draft |= user_input
-                return self._show_source_form("entity_source", errors)
+                return self._show_source_form("entity_source", errors, placeholders)
             self._take_source(user_input)
             return await self._next_after_source()
         return self._show_source_form("entity_source")
 
     def _show_source_form(
-        self, step_id: str, errors: dict[str, str] | None = None
+        self,
+        step_id: str,
+        errors: dict[str, str] | None = None,
+        placeholders: dict[str, str] | None = None,
     ) -> SubentryFlowResult:
         return self.async_show_form(
-            step_id=step_id, data_schema=self._source_schema(), errors=errors
+            step_id=step_id,
+            data_schema=self._source_schema(),
+            errors=errors,
+            description_placeholders=placeholders,
         )
 
     def _take_source(self, user_input: dict[str, Any]) -> None:
@@ -379,6 +409,10 @@ class VirtualDeviceSubentryFlow(ConfigSubentryFlow):
                 vol.Optional(
                     CONF_ATTRIBUTE_NAMES, description=_suggest(self._draft, CONF_ATTRIBUTE_NAMES)
                 ): TextSelector(TextSelectorConfig(multiple=True)),
+                vol.Optional(
+                    CONF_ATTRIBUTE_TEMPLATES,
+                    description=_suggest(self._draft, CONF_ATTRIBUTE_TEMPLATES),
+                ): ObjectSelector(),
             }
         )
 

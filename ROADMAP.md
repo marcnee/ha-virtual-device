@@ -12,11 +12,25 @@ Done
 - [x] Suggested settings from the source entity (name, type, unit, classes, range, options)
 - [x] Optional icon per virtual entity
 - [x] Copy source attributes (none, all, selected) and mark the source (`source_entity`, `forwards_commands`)
+- [x] Attribute templates (compute or rename attributes with Jinja, entered as YAML)
+- [x] The icon of the source is used unless an icon is configured
+- [x] Suggested actions that forward commands to the source (switch, number, select)
+- [x] Changes only restart the changed entities (no reload of the service)
 - [x] A broken action only disables that command
 - [x] English translations
 - [x] Release workflow (GitHub release + ZIP for HACS)
 
 Next (test first)
+- [ ] More entity types, so that e.g. a light or climate can be rebuilt. Each type needs its own
+      platform, a form for its attributes and one action per command, plus suggestions from the
+      source like today. Order by effort, simplest first:
+  - lock (lock / unlock), valve and cover (open / close / stop, optional position)
+  - fan (on/off, speed, preset)
+  - light (on/off, brightness, colour temperature, colour)
+  - climate (mode, target temperature, presets), the largest one
+  - later: water heater, humidifier, siren, vacuum, media player, date/time/text inputs
+  Open question before starting: one generic "mirror the source and forward every service call"
+  mode, or a hand-built form per type.
 - [ ] Try it in a real Home Assistant (`docker compose --profile dev up homeassistant`) and fix findings
 - [ ] German translation
 - [ ] Diagnostics and repair issues (e.g. source entity missing)
