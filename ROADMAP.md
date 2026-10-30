@@ -23,8 +23,10 @@ Done
 - [x] Scheduled tests against the newest Home Assistant release and beta
 - [x] English translations
 - [x] Release workflow (GitHub release + ZIP for HACS)
+- [x] The activity list shows which virtual entity forwarded a command
+- [x] Demo configuration and VS Code debugging for development
 
-Next (test first)
+Next
 - [ ] More entity types, so that e.g. a light or climate can be rebuilt. Each type needs its own
       platform, a form for its attributes and one action per command, plus suggestions from the
       source like today. Order by effort, simplest first:
@@ -43,8 +45,6 @@ Next (test first)
     Full control and works across integrations (the core idea of this project), but it needs a
     long form per type and a lot more code and tests.
   Possible order: mirror first for the simple clone case, assemble per type later.
-- [ ] Try it in a real Home Assistant (`docker compose --profile dev up homeassistant`) and fix findings
-- [ ] Check the GitHub workflows (CI, hassfest, release) on a real run
 - [ ] German translation
 - [ ] Diagnostics and repair issues (e.g. source entity missing)
 
@@ -55,5 +55,4 @@ Decisions
 - One config entry (service) with one config subentry per virtual device, so many devices do not
   clutter the integration list. A change does not reload the service: the entity manager
   (`manager.py`) restarts only the entities whose definition changed.
-- Entries created before subentries (version 1) are not migrated: delete them and add the
-  devices again. Pre-release only.
+- Entries from development versions before subentries (version 1) are not migrated.

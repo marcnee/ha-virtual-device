@@ -187,5 +187,11 @@ so downgrade only together with a backup.
   not saved with *Save and finish*.
 - A device has no icon of its own, because Home Assistant has none for devices. Entities do.
 - Only English texts for now.
-- Entries from before the single-service layout are not migrated: delete them and add the virtual
-  devices again.
+
+## Support, contributing, license
+
+Questions and bug reports are welcome as
+[GitHub issues](https://github.com/marcnee/ha-virtual-device/issues); please include your Home
+Assistant version and the relevant log lines (`custom_components.virtual_device`). To work on the
+code, see [DEVELOPMENT.md](DEVELOPMENT.md): tests come first, and `scripts/check.sh` runs all checks.
+Released under the [MIT license](LICENSE).
