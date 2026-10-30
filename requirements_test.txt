@@ -1,2 +1,4 @@
-pytest-homeassistant-custom-component
-ruff
+# Pinned to the Home Assistant release we support (see DEVELOPMENT.md).
+# pytest-homeassistant-custom-component pins homeassistant itself (2026.10.4).
+pytest-homeassistant-custom-component==0.13.375
+ruff==0.17.3
