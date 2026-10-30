@@ -30,13 +30,18 @@ and CI. When bumping, update `requirements_test.txt`, `hacs.json`, `compose.yaml
 ## Commands
 
 ```sh
-docker compose run --rm test        # pytest
-docker compose run --rm lint        # ruff check + ruff format --check
-docker compose run --rm test-latest # tests against the newest Home Assistant (see DEVELOPMENT.md)
-docker compose run --rm hassfest    # Home Assistant's manifest and translation checks
-python -m pytest                    # without Docker (Python 3.14 venv)
+docker compose run --rm test
+docker compose run --rm lint
+docker compose run --rm test-latest
+docker compose run --rm hassfest
+python -m pytest
 ruff check . && ruff format --check .
 ```
+
+`test` = pytest, `lint` = ruff check and format check, `test-latest` = tests against the newest
+Home Assistant, `hassfest` = Home Assistant's manifest and translation checks (see
+DEVELOPMENT.md); `python -m pytest` and ruff work without Docker in a Python 3.14 venv. Keep
+comments out of command blocks: zsh would pass `#` on to the command.
 
 Run `ruff format .` and the tests before every commit.
 

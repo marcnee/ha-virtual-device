@@ -8,10 +8,14 @@ version (`requirements_test.txt`).
 Write the failing test first, then the smallest change that makes it pass, then refactor.
 
 ```sh
-docker compose run --rm test               # all tests
-docker compose run --rm test -k sensor     # any pytest options
-docker compose run --rm lint               # ruff check + format check
+docker compose run --rm test
+docker compose run --rm lint
 ```
+
+`test` runs all tests and takes pytest options (`docker compose run --rm test -k sensor`); `lint`
+runs ruff check and the format check. The commands in this document contain no trailing comments,
+so they can be pasted as they are, also in zsh (which does not treat `#` as a comment in an
+interactive shell and would pass it to the command).
 
 Without Docker (Python 3.14 required):
 
@@ -139,10 +143,11 @@ generated notes are not used: they only list merged pull requests.)
 
 ### Building a release by hand
 
-The workflow does this on GitHub; the same steps work locally (the `gh` CLI must be logged in):
+The workflow does this on GitHub; the same steps work locally (the `gh` CLI must be logged in).
+The first line writes the release notes to a file, so you can read them before publishing:
 
 ```sh
-python3 scripts/release_notes.py 0.1.0 > release_notes.md      # preview the notes
+python3 scripts/release_notes.py 0.1.0 > release_notes.md
 (cd custom_components/virtual_device && zip -r ../../virtual_device.zip . -x "__pycache__/*")
 gh release create v0.1.0 virtual_device.zip --title v0.1.0 --notes-file release_notes.md
 ```
@@ -176,9 +181,12 @@ fix the incompatibility test-first, and bump the pinned version once the new rel
 To run the same check locally with Docker:
 
 ```sh
-docker compose build --no-cache test-latest && docker compose run --rm test-latest   # newest release
-docker compose build --no-cache test-beta   && docker compose run --rm test-beta     # newest beta
+docker compose build --no-cache test-latest && docker compose run --rm test-latest
+docker compose build --no-cache test-beta && docker compose run --rm test-beta
 ```
+
+`test-latest` uses the newest release, `test-beta` the newest beta. If there is no newer beta,
+both test the same version as the pinned one; the run shows which version it tested.
 
 `--no-cache` matters: Docker would otherwise reuse the installed version of the last build. The
 run prints the Home Assistant version it tested. Without Docker, use a separate environment so
@@ -186,9 +194,11 @@ that the pinned one stays untouched:
 
 ```sh
 python3.14 -m venv /tmp/compat && . /tmp/compat/bin/activate
-pip install pytest-homeassistant-custom-component      # newest release; add --pre for the beta
+pip install pytest-homeassistant-custom-component
 python -m pytest
 ```
+
+Add `--pre` to the `pip install` for the beta.
 
 ## Hassfest
 
