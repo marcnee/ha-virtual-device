@@ -128,7 +128,8 @@ ISSUE = STRINGS.get("issues", {}).get("source_missing", {})
 def test_source_missing_issue_texts() -> None:
     fix = ISSUE["fix_flow"]
     assert ISSUE["title"]
-    assert ISSUE["description"]
+    # Hassfest: a fixable issue has its description in the fix flow, not next to the title.
+    assert "description" not in ISSUE
     assert fix["step"]["source"]["title"]
     assert fix["step"]["source"]["description"]
     assert fix["step"]["source"]["data"]["source_entity"]
