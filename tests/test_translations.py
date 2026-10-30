@@ -1,6 +1,7 @@
 """Every step, field and error of the flows needs an English text."""
 
 import json
+import re
 from pathlib import Path
 
 import pytest
@@ -77,3 +78,19 @@ def test_error_texts() -> None:
 def test_every_platform_has_a_label() -> None:
     labels = STRINGS["selector"]["platform"]["options"]
     assert {str(p) for p in PLATFORMS} <= set(labels)
+
+
+def _texts(node: object) -> list[str]:
+    if isinstance(node, str):
+        return [node]
+    if isinstance(node, dict):
+        return [text for child in node.values() for text in _texts(child)]
+    return []
+
+
+def test_curly_braces_are_escaped_for_the_ui() -> None:
+    """The UI formats texts as ICU messages: a literal brace must be written as '{' or '}'."""
+    for text in _texts(STRINGS):
+        unescaped = re.sub(r"'[{}]+'", "", text)
+        assert "{" not in unescaped, text
+        assert "}" not in unescaped, text
