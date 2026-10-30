@@ -8,13 +8,21 @@ from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResult, FlowResultType, InvalidData
 
 from custom_components.virtual_device.const import (
+    CONF_ACTION_OFF,
+    CONF_ACTION_ON,
     CONF_ACTION_PRESS,
+    CONF_ACTION_SELECT,
+    CONF_ACTION_SET,
     CONF_ENTITIES,
     CONF_ID,
+    CONF_MAX,
+    CONF_MIN,
     CONF_NAME,
+    CONF_OPTIONS,
     CONF_PLATFORM,
-    CONF_SOURCE_ATTRIBUTE,
     CONF_SOURCE_ENTITY,
+    CONF_STEP,
+    CONF_UNIT,
     CONF_VALUE_TEMPLATE,
 )
 
@@ -146,14 +154,14 @@ def stored(**extra: Any) -> dict[str, Any]:
 
 
 def suggested(result: FlowResult) -> dict[str, Any]:
-    """Prefilled values of a form (suggested values and defaults)."""
+    """Prefilled values of a form (suggested values and defaults), without empty ones."""
     values = {}
     for key in result["data_schema"].schema:
         if key.description and "suggested_value" in key.description:
             values[str(key)] = key.description["suggested_value"]
         elif callable(key.default):
             values[str(key)] = key.default()
-    return values
+    return {k: v for k, v in values.items() if v is not None}
 
 
 async def test_remove_entities(hass: HomeAssistant, setup_device: SetupDevice) -> None:
@@ -184,7 +192,6 @@ async def test_editing_prefills_the_forms_and_keeps_the_id(
     assert result["step_id"] == "entity_source"
     assert suggested(result) == {
         CONF_SOURCE_ENTITY: SOURCE,
-        CONF_SOURCE_ATTRIBUTE: None,
         CONF_VALUE_TEMPLATE: STRIP_CODE,
     }
     result = await submit(hass, result["flow_id"], {CONF_SOURCE_ENTITY: SOURCE})
@@ -214,3 +221,124 @@ async def test_changing_the_platform_keeps_the_source_settings(
 
     assert result["data"][CONF_ENTITIES][0][CONF_PLATFORM] == "binary_sensor"
     assert result["data"][CONF_ENTITIES][0][CONF_ID] == "a"
+
+
+async def add(
+    hass: HomeAssistant, entry_id: str, basics: dict[str, Any], source: dict[str, Any]
+) -> FlowResult:
+    """Walk through the add forms up to the details form."""
+    result = await hass.config_entries.options.async_init(entry_id)
+    result = await choose(hass, result["flow_id"], "add_entity")
+    result = await submit(hass, result["flow_id"], basics)
+    return await submit(hass, result["flow_id"], source)
+
+
+async def test_switch_details_store_both_actions(
+    hass: HomeAssistant, setup_device: SetupDevice
+) -> None:
+    entry = await setup_device([])
+    result = await add(
+        hass,
+        entry.entry_id,
+        {CONF_PLATFORM: "switch", CONF_NAME: "Power"},
+        {CONF_SOURCE_ENTITY: SOURCE},
+    )
+    assert result["step_id"] == "entity_details"
+
+    on, off = [{"action": "test.on"}], [{"action": "test.off"}]
+    result = await submit(hass, result["flow_id"], {CONF_ACTION_ON: on, CONF_ACTION_OFF: off})
+    result = await choose(hass, result["flow_id"], "save")
+
+    entity = result["data"][CONF_ENTITIES][0]
+    assert (entity[CONF_ACTION_ON], entity[CONF_ACTION_OFF]) == (on, off)
+
+
+async def test_number_details_store_range_unit_and_action(
+    hass: HomeAssistant, setup_device: SetupDevice
+) -> None:
+    entry = await setup_device([])
+    result = await add(
+        hass,
+        entry.entry_id,
+        {CONF_PLATFORM: "number", CONF_NAME: "Target"},
+        {CONF_SOURCE_ENTITY: SOURCE},
+    )
+    assert result["step_id"] == "entity_details"
+    assert suggested(result) == {CONF_MIN: 0, CONF_MAX: 100, CONF_STEP: 1}
+
+    action = [{"action": "test.set"}]
+    result = await submit(
+        hass,
+        result["flow_id"],
+        {CONF_MIN: 10, CONF_MAX: 30, CONF_STEP: 0.5, CONF_UNIT: "°C", CONF_ACTION_SET: action},
+    )
+    result = await choose(hass, result["flow_id"], "save")
+
+    assert result["data"][CONF_ENTITIES][0] == {
+        CONF_ID: ANY,
+        CONF_PLATFORM: "number",
+        CONF_NAME: "Target",
+        CONF_SOURCE_ENTITY: SOURCE,
+        CONF_MIN: 10,
+        CONF_MAX: 30,
+        CONF_STEP: 0.5,
+        CONF_UNIT: "°C",
+        CONF_ACTION_SET: action,
+    }
+
+
+async def test_number_range_must_be_valid(hass: HomeAssistant, setup_device: SetupDevice) -> None:
+    entry = await setup_device([])
+    result = await add(
+        hass,
+        entry.entry_id,
+        {CONF_PLATFORM: "number", CONF_NAME: "Target"},
+        {CONF_SOURCE_ENTITY: SOURCE},
+    )
+
+    result = await submit(hass, result["flow_id"], {CONF_MIN: 30, CONF_MAX: 10, CONF_STEP: 1})
+
+    assert result["type"] is FlowResultType.FORM
+    assert result["errors"] == {CONF_MAX: "min_greater_max"}
+
+
+async def test_select_details_store_options_and_action(
+    hass: HomeAssistant, setup_device: SetupDevice
+) -> None:
+    entry = await setup_device([])
+    result = await add(
+        hass,
+        entry.entry_id,
+        {CONF_PLATFORM: "select", CONF_NAME: "Mode"},
+        {CONF_SOURCE_ENTITY: SOURCE},
+    )
+    assert result["step_id"] == "entity_details"
+
+    action = [{"action": "test.set_mode"}]
+    result = await submit(
+        hass,
+        result["flow_id"],
+        {CONF_OPTIONS: ["In Betrieb", "Standby"], CONF_ACTION_SELECT: action},
+    )
+    result = await choose(hass, result["flow_id"], "save")
+
+    entity = result["data"][CONF_ENTITIES][0]
+    assert entity[CONF_OPTIONS] == ["In Betrieb", "Standby"]
+    assert entity[CONF_ACTION_SELECT] == action
+
+
+async def test_select_needs_at_least_one_option(
+    hass: HomeAssistant, setup_device: SetupDevice
+) -> None:
+    entry = await setup_device([])
+    result = await add(
+        hass,
+        entry.entry_id,
+        {CONF_PLATFORM: "select", CONF_NAME: "Mode"},
+        {CONF_SOURCE_ENTITY: SOURCE},
+    )
+
+    result = await submit(hass, result["flow_id"], {CONF_OPTIONS: []})
+
+    assert result["type"] is FlowResultType.FORM
+    assert result["errors"] == {CONF_OPTIONS: "options_required"}
