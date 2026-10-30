@@ -108,6 +108,10 @@ class VirtualEntity(Entity):
         self._copied = copied_attributes(
             self._config, source_state.attributes if source_state else None
         )
+        # An icon of its own wins; otherwise the entity looks like its source.
+        self._attr_icon = self._config.get(CONF_ICON) or (
+            source_state.attributes.get("icon") if source_state else None
+        )
         if self._attr_available:
             self._apply(self._transform(self._raw_value(source_state), source_state))
 
