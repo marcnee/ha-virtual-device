@@ -1,4 +1,4 @@
-"""The options flow suggests settings based on the source entity."""
+"""The device flow suggests settings and forwarding actions based on the source entity."""
 
 from typing import Any
 from unittest.mock import ANY
@@ -21,6 +21,7 @@ from custom_components.virtual_device.const import (
     CONF_UNIT,
     CONF_VALUE_TEMPLATE,
 )
+from custom_components.virtual_device.forwarding import forwarding_actions
 
 from .conftest import SetupDevice
 from .helpers import choose, reconfigure, saved_entities, submit, suggested
@@ -67,7 +68,8 @@ async def test_add_from_source_prefills_type_name_and_number_range(
         hass, result["flow_id"], {CONF_PLATFORM: "number", CONF_NAME: "Heat pump target"}
     )
     assert result["step_id"] == "entity_details"  # the source is not asked again
-    assert suggested(result) == RANGE
+    forward = forwarding_actions(hass.states.get(TARGET))
+    assert suggested(result) == RANGE | forward
 
     action = [{"action": "test.set"}]
     result = await submit(hass, result["flow_id"], {**RANGE, CONF_ACTION_SET: action})
@@ -168,7 +170,7 @@ async def test_manual_add_prefills_the_details_from_the_source(
     result = await submit(hass, result["flow_id"], {CONF_SOURCE_ENTITY: TARGET})
 
     assert result["step_id"] == "entity_details"
-    assert suggested(result) == RANGE
+    assert suggested(result) == RANGE | forwarding_actions(hass.states.get(TARGET))
 
 
 async def test_editing_does_not_overwrite_stored_settings_with_source_values(
@@ -191,3 +193,48 @@ async def test_editing_does_not_overwrite_stored_settings_with_source_values(
     result = await submit(hass, result["flow_id"], {CONF_SOURCE_ENTITY: TARGET})
 
     assert suggested(result) == {CONF_MIN: 0, CONF_MAX: 50, CONF_STEP: 1}
+
+
+async def test_switch_details_suggest_forwarding_to_the_source(
+    hass: HomeAssistant, setup_device: SetupDevice
+) -> None:
+    hass.states.async_set("switch.pump", "on", {"friendly_name": "Pump"})
+    entry = await setup_device([])
+    result = await start(hass, entry, "add_from_source")
+    result = await submit(hass, result["flow_id"], {CONF_SOURCE_ENTITY: "switch.pump"})
+
+    result = await submit(hass, result["flow_id"], {CONF_PLATFORM: "switch", CONF_NAME: "Pump"})
+
+    forward = forwarding_actions(hass.states.get("switch.pump"))
+    assert suggested(result) == forward
+    result = await submit(hass, result["flow_id"], forward)
+    await choose(hass, result["flow_id"], "save")
+    stored = saved_entities(entry)[0]
+    assert stored["action_on"][0]["action"] == "homeassistant.turn_on"
+    assert stored["action_off"][0]["action"] == "homeassistant.turn_off"
+
+
+async def test_nothing_is_suggested_when_the_source_cannot_be_controlled(
+    hass: HomeAssistant, setup_device: SetupDevice
+) -> None:
+    hass.states.async_set("binary_sensor.door", "off")
+    entry = await setup_device([])
+    result = await start(hass, entry, "add_from_source")
+    result = await submit(hass, result["flow_id"], {CONF_SOURCE_ENTITY: "binary_sensor.door"})
+
+    result = await submit(hass, result["flow_id"], {CONF_PLATFORM: "switch", CONF_NAME: "Door"})
+
+    assert suggested(result) == {}
+
+
+async def test_no_actions_are_suggested_for_other_types(
+    hass: HomeAssistant, setup_device: SetupDevice
+) -> None:
+    hass.states.async_set("switch.pump", "on", {"friendly_name": "Pump"})
+    entry = await setup_device([])
+    result = await start(hass, entry, "add_from_source")
+    result = await submit(hass, result["flow_id"], {CONF_SOURCE_ENTITY: "switch.pump"})
+
+    result = await submit(hass, result["flow_id"], {CONF_PLATFORM: "sensor", CONF_NAME: "Pump"})
+
+    assert suggested(result) == {}

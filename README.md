@@ -71,6 +71,13 @@ For two entities from one status, add two sensors with the same source and diffe
 
 ## Forwarding commands
 
+When you add a switch, number or select whose source can be controlled that way, the action forms
+are prefilled with an action that passes the command on to the source: `homeassistant.turn_on` /
+`turn_off` for `switch`, `input_boolean`, `light` and `fan`; `number.set_value` /
+`input_number.set_value` for numbers; `select.select_option` / `input_select.select_option` for
+selects. The suggestion is only made when adding, never when editing, and you can change or clear
+it. For any other source write the action yourself:
+
 Actions are normal Home Assistant actions, as in scripts. Their templates can use `source_entity`,
 `source_state` and, depending on the type, `value` (number) or `option` (select).
 

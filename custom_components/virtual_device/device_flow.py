@@ -57,6 +57,7 @@ from .const import (
     COPY_SELECTED,
     PLATFORMS,
 )
+from .forwarding import forwarding_actions
 from .sensor_classes import SENSOR_DEVICE_CLASSES, SENSOR_STATE_CLASSES
 from .source_defaults import defaults_from_source
 
@@ -408,11 +409,11 @@ class VirtualDeviceSubentryFlow(ConfigSubentryFlow):
         return self.async_show_form(step_id="entity_details", data_schema=schema, errors=errors)
 
     def _suggest_from_source(self, platform: str) -> None:
-        """Fill details the user has not set yet with what the source entity suggests."""
+        """Fill details the user has not set yet: settings and forwarding actions of the source."""
         schema = _details_schema(platform, self._draft)
         assert schema is not None
         wanted = {str(key) for key in schema.schema}
         source = self.hass.states.get(self._draft.get(CONF_SOURCE_ENTITY, ""))
-        for key, value in defaults_from_source(source).items():
+        for key, value in (defaults_from_source(source) | forwarding_actions(source)).items():
             if key in wanted:
                 self._draft.setdefault(key, value)
