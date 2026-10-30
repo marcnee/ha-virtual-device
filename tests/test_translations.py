@@ -18,6 +18,8 @@ OPTION_FIELDS = {
         "max_value",
         "step",
         "unit_of_measurement",
+        "device_class",
+        "state_class",
         "options",
         "action_on",
         "action_off",

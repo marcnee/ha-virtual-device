@@ -8,11 +8,12 @@ Done
 - [x] Forward commands: switch, number, select, button
 - [x] Options flow to add, edit and remove entities
 - [x] Stale entities are removed from the registry
+- [x] Sensor options: unit, device class, state class
 - [x] English translations
 - [x] Release workflow (GitHub release + ZIP for HACS)
 
 Next (test first)
-- [ ] Sensor options: unit, device class, state class (numeric values)
+
 - [ ] Try it in a real Home Assistant (`docker compose --profile dev up homeassistant`) and fix findings
 - [ ] German translation
 - [ ] Optional icon per virtual entity

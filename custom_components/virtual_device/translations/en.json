@@ -57,10 +57,15 @@
           "action_off": "Action on turn off",
           "action_set": "Action on set value",
           "action_select": "Action on select option",
-          "action_press": "Action on press"
+          "action_press": "Action on press",
+          "device_class": "Device class",
+          "state_class": "State class"
         },
         "data_description": {
-          "options": "The value (after the template) must match one option exactly."
+          "options": "The value (after the template) must match one option exactly.",
+          "unit_of_measurement": "Optional. If a unit or class is set, the value must be numeric.",
+          "device_class": "Optional. Only for numeric sensors.",
+          "state_class": "Optional. Use measurement for values that go up and down."
         }
       },
       "edit_entity": {

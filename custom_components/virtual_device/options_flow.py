@@ -10,6 +10,7 @@ from copy import deepcopy
 from typing import Any
 
 import voluptuous as vol
+from homeassistant.components.sensor import SensorDeviceClass, SensorStateClass
 from homeassistant.config_entries import ConfigFlowResult, OptionsFlow
 from homeassistant.const import Platform
 from homeassistant.helpers.selector import (
@@ -33,6 +34,7 @@ from .const import (
     CONF_ACTION_PRESS,
     CONF_ACTION_SELECT,
     CONF_ACTION_SET,
+    CONF_DEVICE_CLASS,
     CONF_ENTITIES,
     CONF_ID,
     CONF_MAX,
@@ -43,6 +45,7 @@ from .const import (
     CONF_PLATFORM,
     CONF_SOURCE_ATTRIBUTE,
     CONF_SOURCE_ENTITY,
+    CONF_STATE_CLASS,
     CONF_STEP,
     CONF_UNIT,
     CONF_VALUE_TEMPLATE,
@@ -58,6 +61,21 @@ def _suggest(draft: dict[str, Any], key: str) -> dict[str, Any]:
     return {"suggested_value": draft.get(key)}
 
 
+# Sensors with a device class need numbers, so classes for dates and enums are not offered.
+_SENSOR_DEVICE_CLASSES = sorted(
+    c.value
+    for c in SensorDeviceClass
+    if c not in {SensorDeviceClass.DATE, SensorDeviceClass.TIMESTAMP, SensorDeviceClass.ENUM}
+)
+_SENSOR_STATE_CLASSES = [c.value for c in SensorStateClass]
+
+
+def _dropdown(options: list[str]) -> SelectSelector:
+    return SelectSelector(
+        SelectSelectorConfig(options=options, mode=SelectSelectorMode.DROPDOWN, sort=True)
+    )
+
+
 def _action_field(draft: dict[str, Any], key: str) -> dict[Any, Any]:
     return {vol.Optional(key, description=_suggest(draft, key)): ActionSelector()}
 
@@ -66,6 +84,16 @@ def _details_schema(platform: str, draft: dict[str, Any]) -> vol.Schema | None:
     """Platform specific fields, or None if the platform has none."""
     fields: dict[Any, Any]
     match platform:
+        case Platform.SENSOR:
+            fields = {
+                vol.Optional(CONF_UNIT, description=_suggest(draft, CONF_UNIT)): TextSelector(),
+                vol.Optional(
+                    CONF_DEVICE_CLASS, description=_suggest(draft, CONF_DEVICE_CLASS)
+                ): _dropdown(_SENSOR_DEVICE_CLASSES),
+                vol.Optional(
+                    CONF_STATE_CLASS, description=_suggest(draft, CONF_STATE_CLASS)
+                ): _dropdown(_SENSOR_STATE_CLASSES),
+            }
         case Platform.SWITCH:
             fields = _action_field(draft, CONF_ACTION_ON) | _action_field(draft, CONF_ACTION_OFF)
         case Platform.NUMBER:
