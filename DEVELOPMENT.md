@@ -209,5 +209,6 @@ a Docker image with the repository mounted, so the same check runs locally:
 docker compose run --rm hassfest
 ```
 
-It also runs on every push and weekly on GitHub. The image is not pinned, like in the action, so it
+The image only exists for amd64, so on ARM machines (Apple Silicon) Docker runs it emulated; that
+is slower but works. It also runs on every push and weekly on GitHub. The image is not pinned, like in the action, so it
 follows the newest Home Assistant checks.

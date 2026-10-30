@@ -51,6 +51,8 @@ def test_compose_runs_hassfest_like_the_github_action() -> None:
     hassfest = COMPOSE["hassfest"]
     assert hassfest["image"] == "ghcr.io/home-assistant/hassfest"
     assert hassfest["volumes"] == [".:/github/workspace"]
+    # The image only exists for amd64; on ARM machines (Apple Silicon) Docker emulates it.
+    assert hassfest["platform"] == "linux/amd64"
 
 
 VALIDATE = (ROOT / ".github/workflows/validate.yaml").read_text()

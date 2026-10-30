@@ -29,6 +29,8 @@ services:
   # action hassfest runs: docker compose run --rm hassfest
   hassfest:
     image: ghcr.io/home-assistant/hassfest
+    # The image only exists for amd64; on ARM machines (Apple Silicon) Docker emulates it.
+    platform: linux/amd64
     volumes:
       - .:/github/workspace
 
