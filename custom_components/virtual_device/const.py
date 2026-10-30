@@ -55,3 +55,16 @@ CONF_DEVICE_CLASS = "device_class"
 CONF_STATE_CLASS = "state_class"
 
 CONF_ICON = "icon"
+
+# Which attributes of the source are copied to the virtual entity
+CONF_COPY_ATTRIBUTES = "copy_attributes"
+CONF_ATTRIBUTE_NAMES = "attribute_names"
+COPY_NONE = "none"
+COPY_ALL = "all"
+COPY_SELECTED = "selected"
+COPY_MODES = (COPY_NONE, COPY_ALL, COPY_SELECTED)
+
+# Attributes marking where a virtual entity is wired to.
+ATTR_SOURCE_ENTITY = "source_entity"
+ATTR_SOURCE_ATTRIBUTE = "source_attribute"
+ATTR_FORWARDS_COMMANDS = "forwards_commands"

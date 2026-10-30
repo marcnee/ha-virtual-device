@@ -17,8 +17,12 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.event import async_track_state_change_event
 
 from .actions import ActionRunner
+from .attributes import copied_attributes
 from .const import (
     ACTION_KEYS,
+    ATTR_FORWARDS_COMMANDS,
+    ATTR_SOURCE_ATTRIBUTE,
+    ATTR_SOURCE_ENTITY,
     CONF_ENTITIES,
     CONF_ICON,
     CONF_ID,
@@ -72,6 +76,7 @@ class VirtualEntity(Entity):
         self._attribute: str | None = config.get(CONF_SOURCE_ATTRIBUTE)
         self._transform: ValueTransformer | None = None
         self._actions: dict[str, ActionRunner] = {}
+        self._copied: dict[str, Any] = {}
         self._attr_name = config[CONF_NAME]
         self._attr_unique_id = make_unique_id(subentry.subentry_id, config[CONF_ID])
         self._attr_icon = config.get(CONF_ICON)
@@ -79,6 +84,18 @@ class VirtualEntity(Entity):
             identifiers={(DOMAIN, subentry.subentry_id)},
             name=subentry.title,
         )
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any] | None:
+        """Attributes copied from the source, plus the marking of where the entity is wired to."""
+        attributes = dict(self._copied)
+        if self._source:
+            attributes[ATTR_SOURCE_ENTITY] = self._source
+        if self._attribute:
+            attributes[ATTR_SOURCE_ATTRIBUTE] = self._attribute
+        if self._actions:
+            attributes[ATTR_FORWARDS_COMMANDS] = True
+        return attributes or None
 
     async def async_added_to_hass(self) -> None:
         """Prepare value transformation and actions, follow the source entity."""
@@ -113,6 +130,9 @@ class VirtualEntity(Entity):
         """Derive availability and value from the current source state."""
         source_state = self.hass.states.get(self._source)
         self._attr_available = source_state is not None and source_state.state != STATE_UNAVAILABLE
+        self._copied = copied_attributes(
+            self._config, source_state.attributes if source_state else None
+        )
         if self._attr_available:
             self._apply(self._transform(self._raw_value(source_state), source_state))
 
