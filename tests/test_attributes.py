@@ -1,6 +1,6 @@
 """Which attributes of the source are copied to the virtual entity (pure logic)."""
 
-from custom_components.virtual_device.attributes import copied_attributes
+from custom_components.virtual_device.attributes import attribute_template_error, copied_attributes
 
 SOURCE_ATTRIBUTES = {
     "friendly_name": "Heat pump status",
@@ -40,3 +40,24 @@ def test_reserved_attributes_are_never_copied_even_when_chosen() -> None:
 
 def test_without_a_source_state_nothing_is_copied() -> None:
     assert copied_attributes({"copy_attributes": "all"}, None) == {}
+
+
+def test_valid_attribute_templates_have_no_error() -> None:
+    assert attribute_template_error({"fehler": "{{ attributes.error_code }}"}) is None
+
+
+def test_attribute_templates_must_be_a_mapping() -> None:
+    assert attribute_template_error(["{{ value }}"]) == ("attribute_templates_invalid", "")
+
+
+def test_every_attribute_template_must_be_text() -> None:
+    assert attribute_template_error({"fehler": 5}) == ("attribute_templates_invalid", "fehler")
+    assert attribute_template_error({"fehler": " "}) == ("attribute_templates_invalid", "fehler")
+
+
+def test_attribute_names_must_not_be_reserved() -> None:
+    assert attribute_template_error({"icon": "{{ value }}"}) == ("attribute_name_reserved", "icon")
+    assert attribute_template_error({"source_entity": "x"}) == (
+        "attribute_name_reserved",
+        "source_entity",
+    )
