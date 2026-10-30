@@ -9,11 +9,11 @@ from homeassistant.components.repairs import RepairsFlow
 from homeassistant.config_entries import ConfigEntry, ConfigSubentry
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResult
-from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.selector import EntitySelector
 
 from .const import CONF_ENTITIES, CONF_ID, CONF_NAME, CONF_SOURCE_ENTITY, DOMAIN
 from .missing_sources import replace_source
+from .source_exists import source_exists
 from .source_issues import ATTR_CONFIG_ID, ATTR_SUBENTRY_ID
 
 
@@ -41,12 +41,6 @@ class SourceMissingFlow(RepairsFlow):
                     return entry, subentry, config
         return None
 
-    def _exists(self, entity_id: str) -> bool:
-        return (
-            self.hass.states.get(entity_id) is not None
-            or er.async_get(self.hass).async_get(entity_id) is not None
-        )
-
     async def async_step_init(self, user_input: dict[str, Any] | None = None) -> FlowResult:
         """The repairs integration passes its own data to this step: go to the form."""
         return await self.async_step_source()
@@ -58,7 +52,7 @@ class SourceMissingFlow(RepairsFlow):
         entry, subentry, config = found
         errors = {}
         if user_input is not None:
-            if self._exists(user_input[CONF_SOURCE_ENTITY]):
+            if source_exists(self.hass, user_input[CONF_SOURCE_ENTITY]):
                 entities = replace_source(
                     list(subentry.data[CONF_ENTITIES]),
                     self._config_id,

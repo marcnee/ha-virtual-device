@@ -3,11 +3,11 @@
 from __future__ import annotations
 
 from collections.abc import Callable
+from functools import partial
 from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import Event, HomeAssistant, callback
-from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.event import (
     async_track_entity_registry_updated_event,
@@ -18,6 +18,7 @@ from homeassistant.helpers.start import async_at_started
 from .const import CONF_NAME, CONF_SOURCE_ENTITY, DOMAIN
 from .definitions import entity_configs
 from .missing_sources import EntityKey, missing_sources
+from .source_exists import source_exists
 
 ISSUE_SOURCE_MISSING = "source_missing"
 ATTR_SUBENTRY_ID = "subentry_id"
@@ -72,19 +73,13 @@ class SourceIssues:
         if not self._started:
             return
         configs = entity_configs(self._entry)
-        missing = missing_sources(configs, self._source_exists)
+        missing = missing_sources(configs, partial(source_exists, self._hass))
         for key in missing - self._raised:
             self._raise(key, configs[key])
         for key in self._raised - missing:
             ir.async_delete_issue(self._hass, DOMAIN, issue_id(key))
         self._raised = missing
         self._watch({c[CONF_SOURCE_ENTITY] for c in configs.values() if CONF_SOURCE_ENTITY in c})
-
-    def _source_exists(self, entity_id: str) -> bool:
-        return (
-            self._hass.states.get(entity_id) is not None
-            or er.async_get(self._hass).async_get(entity_id) is not None
-        )
 
     def _raise(self, key: EntityKey, config: dict[str, Any]) -> None:
         subentry = self._entry.subentries[key[0]]
