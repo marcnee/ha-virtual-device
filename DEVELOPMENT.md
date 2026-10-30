@@ -37,4 +37,14 @@ integration → Virtual Device*. The integration folder is mounted, so after a c
 
 ## Release
 
-Not set up yet, see the open question in ROADMAP.md.
+HACS installs the `virtual_device.zip` attached to a GitHub release.
+
+1. Raise `version` in `custom_components/virtual_device/manifest.json` (and commit).
+2. Tag the commit with the same number and push the tag:
+
+   ```sh
+   git tag v0.1.0 && git push origin v0.1.0
+   ```
+
+The `Release` workflow runs the tests, checks that tag and manifest version match, builds the ZIP
+and creates the release with generated notes.
