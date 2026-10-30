@@ -91,11 +91,11 @@ class VirtualEntity(Entity):
         """Take over the source value (None = unknown). Implemented per platform."""
         raise NotImplementedError
 
-    async def _run_action(self, key: str) -> None:
+    async def _run_action(self, key: str, **variables: Any) -> None:
         """Forward a command by running the configured action."""
         runner = self._actions.get(key)
         if runner is None:
             raise HomeAssistantError(f"'{self._attr_name}' has no action configured ({key})")
         source_state = self.hass.states.get(self._source) if self._source else None
-        variables = {"source_entity": self._source, "source_state": source_state}
-        await runner.async_run(variables, self._context)
+        context_variables = {"source_entity": self._source, "source_state": source_state}
+        await runner.async_run({**context_variables, **variables}, self._context)
