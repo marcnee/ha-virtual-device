@@ -61,7 +61,7 @@
         },
         "entity_details": {
           "title": "Details",
-          "description": "Actions forward commands to the source integration. They can use `'{{' value '}}'` (number), `'{{' option '}}'` (select) and `'{{' source_entity '}}'`.\n\nExample for a select: `'{{' 18 if option == 'Running' else 19 '}}'`",
+          "description": "Actions forward commands to the source integration (prefilled if the source can be controlled directly). They can use `'{{' value '}}'` (number), `'{{' option '}}'` (select) and `'{{' source_entity '}}'`.\n\nExample for a select: `'{{' 18 if option == 'Running' else 19 '}}'`",
           "data": {
             "min_value": "Minimum",
             "max_value": "Maximum",
