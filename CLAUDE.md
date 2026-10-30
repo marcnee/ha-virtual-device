@@ -66,7 +66,8 @@ Run `ruff format .` and the tests before every commit.
 - `CHANGELOG.md` release notes, `scripts/` helper scripts (all checks, release notes, brand images)
 - `.github/workflows/` CI, hassfest, HACS validation (`validate.yaml`), release and `ha-compat`
   (newer Home Assistant versions)
-- `dev-config/configuration.yaml` demo entities of the dev instance (`tests/test_dev_config.py`)
+- `tests/ha_config/configuration.yaml` Home Assistant configuration with demo entities, used by the
+  dev instance and by `tests/test_ha_config.py`
 - `.vscode/` launch configurations (debug tests, attach to Docker) and tasks; keep them matching
   `compose.yaml` and `scripts/check.sh` (`tests/test_vscode.py` checks this)
 - `DEVELOPMENT.md` how to test and try it, `ROADMAP.md` planned work

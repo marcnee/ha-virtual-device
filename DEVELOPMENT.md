@@ -45,8 +45,9 @@ mkdir -p dev/config
 docker compose --profile dev up homeassistant
 ```
 
-The instance starts with the configuration in `dev-config/configuration.yaml` (mounted read-only
-over `dev/config/configuration.yaml`), so there are entities to use as sources from the start:
+The instance starts with the configuration in `tests/ha_config/configuration.yaml` (also loaded by
+the tests; mounted read-only over `dev/config/configuration.yaml`), so there are entities to use
+as sources from the start:
 
 | Entities | Use them as source for |
 |---|---|
@@ -54,7 +55,7 @@ over `dev/config/configuration.yaml`), so there are entities to use as sources f
 | `input_boolean.notify`, `input_number.noise_allowance`, `input_select.who_cooks`, `input_button.bell` (also from the demo) | switch, number, select and button with working commands |
 | `sensor.dev_temperature` (unit, device class, icon, attributes `room`, `battery`, `sensor_type`), `binary_sensor.dev_door` (our own) | value templates, copied attributes and attribute templates; they change every minute |
 
-The integration logs at debug level. Change `dev-config/configuration.yaml` to add more
+The integration logs at debug level. Change `tests/ha_config/configuration.yaml` to add more
 entities; restart the container to apply it.
 
 Open <http://localhost:8123>, finish onboarding, then *Settings → Devices & services → Add

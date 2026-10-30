@@ -1,5 +1,6 @@
-# Configuration of the dev instance only (docker compose --profile dev up homeassistant).
-# It is mounted over /config/configuration.yaml. It gives you entities to use as sources.
+# Home Assistant configuration for the dev instance (docker compose --profile dev up homeassistant)
+# and for the tests (tests/test_ha_config.py). It is mounted over /config/configuration.yaml and
+# gives you entities to use as sources.
 
 default_config:
 

@@ -1,4 +1,4 @@
-"""The dev instance starts with demo entities that can serve as sources."""
+"""The Home Assistant configuration of the dev instance and the tests: demo entities as sources."""
 
 from pathlib import Path
 from unittest.mock import patch
@@ -12,7 +12,7 @@ from homeassistant.setup import async_setup_component
 from custom_components.virtual_device.const import PLATFORMS
 
 ROOT = Path(__file__).parents[1]
-CONFIG_FILE = ROOT / "dev-config/configuration.yaml"
+CONFIG_FILE = ROOT / "tests/ha_config/configuration.yaml"
 NOT_LOADED_IN_TESTS = {"default_config", "logger"}
 
 
@@ -23,7 +23,7 @@ def expected_lingering_timers() -> bool:
 
 
 @pytest.fixture
-async def dev_config(hass: HomeAssistant) -> None:
+async def ha_config(hass: HomeAssistant) -> None:
     """Set up everything of the dev configuration that does not need the network."""
     config = {
         domain: value or {}
@@ -48,14 +48,14 @@ async def dev_config(hass: HomeAssistant) -> None:
 
 
 @pytest.mark.parametrize("platform", PLATFORMS)
-@pytest.mark.usefixtures("dev_config")
+@pytest.mark.usefixtures("ha_config")
 async def test_every_supported_source_type_has_a_demo_entity(
     hass: HomeAssistant, platform: str
 ) -> None:
     assert hass.states.async_entity_ids(platform)
 
 
-@pytest.mark.usefixtures("dev_config")
+@pytest.mark.usefixtures("ha_config")
 async def test_a_demo_sensor_has_attributes_to_copy(hass: HomeAssistant) -> None:
     state = hass.states.get("sensor.dev_temperature")
 
@@ -64,7 +64,7 @@ async def test_a_demo_sensor_has_attributes_to_copy(hass: HomeAssistant) -> None
     assert state.attributes["unit_of_measurement"] == "°C"
 
 
-@pytest.mark.usefixtures("dev_config")
+@pytest.mark.usefixtures("ha_config")
 async def test_the_controllable_helpers_exist(hass: HomeAssistant) -> None:
     for entity_id in (
         "input_boolean.notify",
@@ -82,9 +82,9 @@ def test_helpers_are_left_to_the_demo() -> None:
     assert not {"input_boolean", "input_number", "input_select", "input_button"} & config.keys()
 
 
-def test_both_dev_instances_load_the_dev_configuration() -> None:
+def test_both_dev_instances_load_the_ha_configuration() -> None:
     compose = yaml.safe_load((ROOT / "compose.yaml").read_text())["services"]
-    mount = "./dev-config/configuration.yaml:/config/configuration.yaml:ro"
+    mount = "./tests/ha_config/configuration.yaml:/config/configuration.yaml:ro"
     for service in ("homeassistant", "homeassistant-debug"):
         assert mount in compose[service]["volumes"]
 
