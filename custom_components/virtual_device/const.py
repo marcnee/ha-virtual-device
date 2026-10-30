@@ -10,6 +10,7 @@ PLATFORMS = [
     Platform.SWITCH,
     Platform.NUMBER,
     Platform.SELECT,
+    Platform.BUTTON,
 ]
 
 # Config entry
@@ -34,5 +35,12 @@ CONF_ACTION_ON = "action_on"
 CONF_ACTION_OFF = "action_off"
 CONF_ACTION_SET = "action_set"
 CONF_ACTION_SELECT = "action_select"
+CONF_ACTION_PRESS = "action_press"
 
-ACTION_KEYS = (CONF_ACTION_ON, CONF_ACTION_OFF, CONF_ACTION_SET, CONF_ACTION_SELECT)
+ACTION_KEYS = (
+    CONF_ACTION_ON,
+    CONF_ACTION_OFF,
+    CONF_ACTION_SET,
+    CONF_ACTION_SELECT,
+    CONF_ACTION_PRESS,
+)
