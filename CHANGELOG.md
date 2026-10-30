@@ -22,4 +22,6 @@ First release.
 - Source attributes can be copied (all or selected) and computed with attribute templates.
 - Entities show where they come from (`source_entity`, `source_attribute`, `forwards_commands`).
 - Changes restart only the entities that changed.
+- The activity list (logbook) shows which virtual entity forwarded a command: the change at the
+  source reads "triggered by" the virtual entity, and the user who gave the command is kept.
 - Automatic migration of stored data for future versions.

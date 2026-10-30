@@ -7,7 +7,7 @@ from typing import Any
 
 import voluptuous as vol
 from homeassistant.config_entries import ConfigSubentry
-from homeassistant.const import STATE_UNAVAILABLE, STATE_UNKNOWN
+from homeassistant.const import ATTR_ENTITY_ID, ATTR_NAME, STATE_UNAVAILABLE, STATE_UNKNOWN
 from homeassistant.core import Event, EventStateChangedData, State, callback
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.device_registry import DeviceInfo
@@ -16,8 +16,10 @@ from homeassistant.helpers.event import async_track_state_change_event
 
 from .actions import ActionRunner
 from .attributes import copied_attributes
+from .command_context import child_context
 from .const import (
     ACTION_KEYS,
+    ATTR_COMMAND,
     ATTR_FORWARDS_COMMANDS,
     ATTR_SOURCE_ATTRIBUTE,
     ATTR_SOURCE_ENTITY,
@@ -31,6 +33,7 @@ from .const import (
     CONF_SOURCE_ENTITY,
     CONF_VALUE_TEMPLATE,
     DOMAIN,
+    EVENT_COMMAND_FORWARDED,
 )
 from .transform import AttributeTransformer, ValueTransformer
 
@@ -57,6 +60,7 @@ class VirtualEntity(Entity):
         self._actions: dict[str, ActionRunner] = {}
         self._derived: dict[str, Any] = {}
         self._attr_name = config[CONF_NAME]
+        self._device_name = subentry.title
         self._attr_unique_id = make_unique_id(subentry.subentry_id, config[CONF_ID])
         self._attr_icon = config.get(CONF_ICON)
         self._attr_device_info = DeviceInfo(
@@ -144,4 +148,20 @@ class VirtualEntity(Entity):
             raise HomeAssistantError(f"'{self._attr_name}' has no action configured ({key})")
         source_state = self.hass.states.get(self._source) if self._source else None
         context_variables = {"source_entity": self._source, "source_state": source_state}
-        await runner.async_run({**context_variables, **variables}, self._context)
+        # The action runs in a context of its own, announced by an event: the logbook then shows
+        # this entity as the cause of what the action changes at the source.
+        context = child_context(self._context)
+        self.hass.bus.async_fire(
+            EVENT_COMMAND_FORWARDED, self._forwarded_event_data(key), context=context
+        )
+        await runner.async_run({**context_variables, **variables}, context)
+
+    def _forwarded_event_data(self, key: str) -> dict[str, Any]:
+        data = {
+            ATTR_NAME: f"{self._device_name} {self._attr_name}",
+            ATTR_ENTITY_ID: self.entity_id,
+            ATTR_COMMAND: key.removeprefix("action_"),
+        }
+        if self._source:
+            data[ATTR_SOURCE_ENTITY] = self._source
+        return data

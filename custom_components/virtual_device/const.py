@@ -68,6 +68,10 @@ COPY_MODES = (COPY_NONE, COPY_ALL, COPY_SELECTED)
 ATTR_SOURCE_ENTITY = "source_entity"
 ATTR_SOURCE_ATTRIBUTE = "source_attribute"
 ATTR_FORWARDS_COMMANDS = "forwards_commands"
+ATTR_COMMAND = "command"
+
+# Fired when a virtual entity forwards a command; the logbook shows it as the cause of the change.
+EVENT_COMMAND_FORWARDED = "virtual_device_command_forwarded"
 
 # Attributes computed from the source: {attribute name: Jinja template}
 CONF_ATTRIBUTE_TEMPLATES = "attribute_templates"

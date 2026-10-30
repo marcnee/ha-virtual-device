@@ -106,6 +106,11 @@ Passing a number through unchanged:
     value: "{{ value }}"
 ```
 
+In the activity list (logbook) you can see who changed the source: each forwarded command is
+logged for the virtual entity ("Heat pump Power forwarded the on command to switch.heatpump"), and
+the change at the source is shown as triggered by that entity. The user who gave the command
+stays attached, whether it came from the dashboard, an automation or a voice assistant.
+
 Switches, numbers and selects do not change their own state after a command. They follow the
 source, so the state you see is the one the device really reports.
 
