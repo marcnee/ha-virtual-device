@@ -26,6 +26,7 @@ Ideas, not decided
 
 Decisions
 - One config entry (service) with one config subentry per virtual device, so many devices do not
-  clutter the integration list. Trade-off: any change reloads the whole service.
+  clutter the integration list. A change does not reload the service: the entity manager
+  (`manager.py`) restarts only the entities whose definition changed.
 - Entries created before subentries (version 1) are not migrated: delete them and add the
   devices again. Pre-release only.

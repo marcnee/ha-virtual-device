@@ -36,6 +36,8 @@ Run `ruff format .` and the tests before every commit.
 - `custom_components/virtual_device/` the integration (`manifest.json`, ...)
   - `config_flow.py` sets up the single service; `device_flow.py` is the subentry flow that
     creates/edits one virtual device. Each virtual device is a config subentry of the service.
+  - `manager.py` starts/stops entities when the configuration changes (no reload of the service);
+    `changes.py` is its pure diff logic, `attributes.py` the pure logic for copied attributes.
 - `tests/` pytest tests, one file per module
 - `DEVELOPMENT.md` how to test and try it, `ROADMAP.md` planned work
 

@@ -3,20 +3,20 @@
 from __future__ import annotations
 
 from homeassistant.components.button import ButtonEntity
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import CONF_ACTION_PRESS
-from .entity import VirtualEntity, add_platform_entities
+from .entity import VirtualEntity
+from .manager import VirtualDeviceConfigEntry
 
 
 async def async_setup_entry(
-    hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
+    hass: HomeAssistant, entry: VirtualDeviceConfigEntry, async_add_entities: AddEntitiesCallback
 ) -> None:
     """Create the virtual buttons of a virtual device."""
-    add_platform_entities(entry, Platform.BUTTON, VirtualButton, async_add_entities)
+    await entry.runtime_data.async_register_platform(Platform.BUTTON, VirtualButton)
 
 
 class VirtualButton(VirtualEntity, ButtonEntity):

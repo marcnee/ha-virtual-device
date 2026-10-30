@@ -5,21 +5,21 @@ from __future__ import annotations
 from typing import Any
 
 from homeassistant.components.switch import SwitchEntity
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import CONF_ACTION_OFF, CONF_ACTION_ON
-from .entity import VirtualEntity, add_platform_entities
+from .entity import VirtualEntity
+from .manager import VirtualDeviceConfigEntry
 from .transform import to_bool
 
 
 async def async_setup_entry(
-    hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
+    hass: HomeAssistant, entry: VirtualDeviceConfigEntry, async_add_entities: AddEntitiesCallback
 ) -> None:
     """Create the virtual switches of a virtual device."""
-    add_platform_entities(entry, Platform.SWITCH, VirtualSwitch, async_add_entities)
+    await entry.runtime_data.async_register_platform(Platform.SWITCH, VirtualSwitch)
 
 
 class VirtualSwitch(VirtualEntity, SwitchEntity):
