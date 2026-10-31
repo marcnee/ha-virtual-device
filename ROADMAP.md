@@ -48,7 +48,8 @@ Next
     Full control and works across integrations (the core idea of this project), but it needs a
     long form per type and a lot more code and tests.
   Possible order: mirror first for the simple clone case, assemble per type later.
-- [ ] German translation
+- [ ] German translation (the lines of the template preview are made in `template_preview.py`
+      and need a way to be translated, e.g. a lookup of the translations at runtime)
 - [ ] Diagnostics
 
 Ideas, not decided

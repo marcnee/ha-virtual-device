@@ -110,11 +110,11 @@ def test_curly_braces_are_escaped_for_the_ui() -> None:
     """The UI formats texts as ICU messages: a literal brace must be written as '{' or '}'.
 
     Only the placeholders the flows fill in ({attribute}, {error}, {device}, {entity},
-    {source}, {source_value}, {value_result}, {attribute_results}) are left as they are.
+    {source}, {preview}) are left as they are.
     """
     for text in _texts(STRINGS):
         unescaped = re.sub(
-            r"'[{}]+'|\{(?:attribute|error|device|entity|source|source_value|value_result|attribute_results)\}",
+            r"'[{}]+'|\{(?:attribute|error|device|entity|source|preview)\}",
             "",
             text,
         )
@@ -155,6 +155,5 @@ def test_the_device_class_text_covers_binary_sensors() -> None:
 @pytest.mark.parametrize("step", ["entity_source", "add_from_source"])
 def test_the_source_forms_show_the_preview_of_the_templates(step: str) -> None:
     texts = DEVICE["step"][step]
-    for placeholder in ("source_value", "value_result", "attribute_results"):
-        assert "{" + placeholder + "}" in texts["description"]
+    assert "{preview}" in texts["description"]
     assert texts["data_description"]["test_template"]

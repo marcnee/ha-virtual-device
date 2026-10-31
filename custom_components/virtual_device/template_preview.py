@@ -8,11 +8,21 @@ from typing import Any
 from homeassistant.core import HomeAssistant, State
 from homeassistant.exceptions import TemplateError
 
-from .const import CONF_ATTRIBUTE_TEMPLATES, CONF_SOURCE_ATTRIBUTE, CONF_VALUE_TEMPLATE
+from .const import (
+    CONF_ATTRIBUTE_TEMPLATES,
+    CONF_SOURCE_ATTRIBUTE,
+    CONF_SOURCE_ENTITY,
+    CONF_VALUE_TEMPLATE,
+)
 from .transform import AttributeTransformer, ValueTransformer, raw_value
 
 NOTHING = "\u2013"  # shown where there is no value
 _ERROR = "⚠ "
+# The texts of the preview are made here, so that lines that do not apply can be left out.
+_TITLE = "**Preview** with the current state of the source:"
+_VALUE = "Value of the source: "
+_RESULT = "Result of the value template: "
+_ATTRIBUTES = "Attribute templates: "
 _MAX_LENGTH = 80
 
 
@@ -41,24 +51,28 @@ def _usable(templates: Any) -> dict[str, str]:
     }
 
 
-def build_preview(
-    hass: HomeAssistant, config: Mapping[str, Any], state: State | None
-) -> dict[str, str]:
-    """Texts for the form: the value of the source and what the templates make of it."""
-    preview = {"source_value": NOTHING, "value_result": NOTHING, "attribute_results": NOTHING}
-    if state is None:
-        return preview
-    raw = raw_value(state, config.get(CONF_SOURCE_ATTRIBUTE))
-    preview["source_value"] = _show(raw)
-    if template := config.get(CONF_VALUE_TEMPLATE):
-        try:
-            preview["value_result"] = _show(ValueTransformer(hass, template, "").render(raw, state))
-        except TemplateError as err:
-            preview["value_result"] = _show_error(err)
-    if templates := _usable(config.get(CONF_ATTRIBUTE_TEMPLATES)):
-        rendered = AttributeTransformer(hass, templates, "").render(raw, state)
-        preview["attribute_results"] = ", ".join(
-            f"`{name}`: " + (_show_error(r) if isinstance(r, TemplateError) else _show(r))
-            for name, r in rendered.items()
-        )
-    return preview
+def build_preview(hass: HomeAssistant, config: Mapping[str, Any], state: State | None) -> str:
+    """The text for a form: the value of the source and what the templates make of it.
+
+    Empty as long as no source is chosen. Only the templates that are set get a line.
+    """
+    if not config.get(CONF_SOURCE_ENTITY):
+        return ""
+    lines = []
+    raw = None if state is None else raw_value(state, config.get(CONF_SOURCE_ATTRIBUTE))
+    lines.append(f"{_VALUE}{_show(raw)}")
+    if state is not None:
+        if template := config.get(CONF_VALUE_TEMPLATE):
+            try:
+                result = _show(ValueTransformer(hass, template, "").render(raw, state))
+            except TemplateError as err:
+                result = _show_error(err)
+            lines.append(f"{_RESULT}{result}")
+        if templates := _usable(config.get(CONF_ATTRIBUTE_TEMPLATES)):
+            rendered = AttributeTransformer(hass, templates, "").render(raw, state)
+            results = ", ".join(
+                f"`{name}`: " + (_show_error(r) if isinstance(r, TemplateError) else _show(r))
+                for name, r in rendered.items()
+            )
+            lines.append(f"{_ATTRIBUTES}{results}")
+    return _TITLE + "".join(f"\n- {line}" for line in lines)

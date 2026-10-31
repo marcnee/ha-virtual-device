@@ -346,7 +346,7 @@ class VirtualDeviceSubentryFlow(ConfigSubentryFlow):
             step_id=step_id,
             data_schema=source_schema(self._draft),
             errors=errors,
-            description_placeholders=build_preview(self.hass, self._draft, source)
+            description_placeholders={"preview": build_preview(self.hass, self._draft, source)}
             | (placeholders or {}),
         )
 

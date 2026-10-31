@@ -23,12 +23,10 @@ SOURCE = "sensor.heatpump_status"
 BASICS = {CONF_PLATFORM: "binary_sensor", CONF_NAME: "Running"}
 TEMPLATE = "{{ value.split(' - ')[-1] }}"
 INPUT = {CONF_SOURCE_ENTITY: SOURCE, CONF_VALUE_TEMPLATE: TEMPLATE}
-PREVIEW_KEYS = {"source_value", "value_result", "attribute_results"}
 
 
-def preview(result: FlowResult) -> dict[str, str]:
-    placeholders = result["description_placeholders"]
-    return {key: placeholders[key] for key in PREVIEW_KEYS}
+def preview(result: FlowResult) -> str:
+    return result["description_placeholders"]["preview"]
 
 
 async def start_from_source(hass: HomeAssistant, entry) -> FlowResult:
@@ -44,7 +42,7 @@ async def test_the_source_form_offers_the_test_and_shows_nothing_at_first(
     result = await start_from_source(hass, entry)
 
     assert CONF_TEST_TEMPLATE in {str(key) for key in result["data_schema"].schema}
-    assert preview(result) == dict.fromkeys(PREVIEW_KEYS, NOTHING)
+    assert preview(result) == ""
 
 
 async def test_testing_shows_the_result_and_keeps_the_form_open(
@@ -59,11 +57,9 @@ async def test_testing_shows_the_result_and_keeps_the_form_open(
     assert result["type"] is FlowResultType.FORM
     assert result["step_id"] == "add_from_source"
     assert not result["errors"]
-    assert preview(result) == {
-        "source_value": "`18 - Running`",
-        "value_result": "`Running`",
-        "attribute_results": NOTHING,
-    }
+    assert "Value of the source: `18 - Running`" in preview(result)
+    assert "Result of the value template: `Running`" in preview(result)
+    assert "Attribute templates" not in preview(result)
 
 
 async def test_the_entered_values_stay_in_the_form_after_testing(
@@ -116,8 +112,8 @@ async def test_the_test_works_in_the_source_form_of_a_manually_added_entity(
     )
 
     assert result["step_id"] == "entity_source"
-    assert preview(result)["value_result"] == "`Running`"
-    assert preview(result)["attribute_results"] == "`next_code`: `8`"
+    assert "Result of the value template: `Running`" in preview(result)
+    assert "Attribute templates: `next_code`: `8`" in preview(result)
     result = await submit(hass, result["flow_id"], {**INPUT, CONF_ATTRIBUTE_TEMPLATES: templates})
     await save(hass, result)
     assert saved_entities(entry) == [
@@ -143,7 +139,7 @@ async def test_a_template_with_an_error_is_shown_in_the_result(
     )
 
     assert result["step_id"] == "add_from_source"
-    assert preview(result)["value_result"].startswith("⚠ ")
+    assert "Result of the value template: ⚠ " in preview(result)
 
 
 async def test_invalid_attribute_templates_show_their_error_and_still_a_preview(
@@ -161,7 +157,7 @@ async def test_invalid_attribute_templates_show_their_error_and_still_a_preview(
 
     assert result["errors"] == {CONF_ATTRIBUTE_TEMPLATES: "attribute_name_reserved"}
     assert result["description_placeholders"]["attribute"] == "icon"
-    assert preview(result)["source_value"] == "`18 - Running`"
+    assert "Value of the source: `18 - Running`" in preview(result)
 
 
 async def test_a_source_that_does_not_exist_can_be_tested_and_shows_nothing(
@@ -173,7 +169,7 @@ async def test_a_source_that_does_not_exist_can_be_tested_and_shows_nothing(
     result = await submit(hass, result["flow_id"], {**INPUT, CONF_TEST_TEMPLATE: True})
 
     assert result["step_id"] == "add_from_source"
-    assert preview(result) == dict.fromkeys(PREVIEW_KEYS, NOTHING)
+    assert f"Value of the source: {NOTHING}" in preview(result)
 
 
 async def test_editing_shows_the_preview_of_the_stored_templates_at_once(
@@ -188,4 +184,4 @@ async def test_editing_shows_the_preview_of_the_stored_templates_at_once(
     result = await submit(hass, result["flow_id"], BASICS)
 
     assert result["step_id"] == "entity_source"
-    assert preview(result)["value_result"] == "`Running`"
+    assert "Result of the value template: `Running`" in preview(result)
