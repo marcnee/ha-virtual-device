@@ -9,6 +9,7 @@ from homeassistant.helpers import issue_registry as ir
 
 from custom_components.virtual_device.const import (
     CONF_ENTITIES,
+    CONF_EXTRA_SOURCES,
     CONF_ID,
     CONF_NAME,
     CONF_PLATFORM,
@@ -22,12 +23,13 @@ from .helpers import subentry_by_title
 SOURCE = "sensor.outside_temperature"
 
 
-def status(source: str = SOURCE) -> dict[str, Any]:
+def status(source: str = SOURCE, extra: list[str] | None = None) -> dict[str, Any]:
     return {
         CONF_ID: "status",
         CONF_PLATFORM: "sensor",
         CONF_NAME: "Status",
         CONF_SOURCE_ENTITY: source,
+        **({CONF_EXTRA_SOURCES: extra} if extra else {}),
     }
 
 
@@ -52,6 +54,7 @@ async def test_a_missing_source_raises_an_issue(
     assert issue.data == {
         "subentry_id": subentry_by_title(entry, "Heat pump").subentry_id,
         "config_id": "status",
+        "source": SOURCE,
     }
 
 
@@ -167,3 +170,41 @@ async def test_nothing_is_checked_before_home_assistant_has_started(
     await hass.async_block_till_done()
 
     assert len(issues(hass)) == 1
+
+
+async def test_a_missing_extra_source_raises_an_issue_naming_it(
+    hass: HomeAssistant, setup_device: SetupDevice
+) -> None:
+    hass.states.async_set(SOURCE, "5")
+
+    entry = await setup_device([status(extra=["sensor.error_code"])])
+
+    [issue] = issues(hass)
+    assert issue.translation_placeholders["source"] == "sensor.error_code"
+    assert issue.data == {
+        "subentry_id": subentry_by_title(entry, "Heat pump").subentry_id,
+        "config_id": "status",
+        "source": "sensor.error_code",
+    }
+
+
+async def test_every_missing_source_of_an_entity_gets_its_own_issue(
+    hass: HomeAssistant, setup_device: SetupDevice
+) -> None:
+    await setup_device([status(extra=["sensor.error_code"])])
+
+    named = {issue.translation_placeholders["source"] for issue in issues(hass)}
+
+    assert named == {SOURCE, "sensor.error_code"}
+
+
+async def test_the_issue_of_an_extra_source_goes_away_when_it_appears(
+    hass: HomeAssistant, setup_device: SetupDevice
+) -> None:
+    hass.states.async_set(SOURCE, "5")
+    await setup_device([status(extra=["sensor.error_code"])])
+
+    hass.states.async_set("sensor.error_code", "133")
+    await hass.async_block_till_done()
+
+    assert issues(hass) == []

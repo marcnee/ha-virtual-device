@@ -32,6 +32,8 @@ CONF_PLATFORM = "platform"
 CONF_NAME = "name"
 CONF_SOURCE_ENTITY = "source_entity"
 CONF_SOURCE_ATTRIBUTE = "source_attribute"
+# More entities the templates read; the virtual entity updates when any of them changes
+CONF_EXTRA_SOURCES = "extra_sources"
 CONF_VALUE_TEMPLATE = "value_template"
 CONF_UNIT = "unit_of_measurement"
 CONF_MIN = "min_value"

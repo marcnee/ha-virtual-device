@@ -14,22 +14,25 @@ from homeassistant.helpers.selector import EntitySelector
 from .const import CONF_ENTITIES, CONF_ID, CONF_NAME, CONF_SOURCE_ENTITY, DOMAIN
 from .missing_sources import replace_source
 from .source_exists import source_exists
-from .source_issues import ATTR_CONFIG_ID, ATTR_SUBENTRY_ID
+from .source_issues import ATTR_CONFIG_ID, ATTR_SOURCE, ATTR_SUBENTRY_ID
 
 
 async def async_create_fix_flow(
     hass: HomeAssistant, issue_id: str, data: dict[str, str | int | float | None] | None
 ) -> RepairsFlow:
     """Called by the repairs integration for a fixable issue of this integration."""
-    return SourceMissingFlow(str(data[ATTR_SUBENTRY_ID]), str(data[ATTR_CONFIG_ID]))
+    return SourceMissingFlow(
+        str(data[ATTR_SUBENTRY_ID]), str(data[ATTR_CONFIG_ID]), str(data[ATTR_SOURCE])
+    )
 
 
 class SourceMissingFlow(RepairsFlow):
     """Asks for a new source and stores it in the definition of the virtual entity."""
 
-    def __init__(self, subentry_id: str, config_id: str) -> None:
+    def __init__(self, subentry_id: str, config_id: str, source: str) -> None:
         self._subentry_id = subentry_id
         self._config_id = config_id
+        self._source = source
 
     def _find(self) -> tuple[ConfigEntry, ConfigSubentry, dict[str, Any]] | None:
         """The service, device and definition of the entity, if it still exists."""
@@ -56,6 +59,7 @@ class SourceMissingFlow(RepairsFlow):
                 entities = replace_source(
                     list(subentry.data[CONF_ENTITIES]),
                     self._config_id,
+                    self._source,
                     user_input[CONF_SOURCE_ENTITY],
                 )
                 self.hass.config_entries.async_update_subentry(
@@ -69,7 +73,7 @@ class SourceMissingFlow(RepairsFlow):
             description_placeholders={
                 "device": subentry.title,
                 "entity": config[CONF_NAME],
-                "source": config[CONF_SOURCE_ENTITY],
+                "source": self._source,
             },
             errors=errors,
         )

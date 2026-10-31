@@ -11,6 +11,7 @@ from homeassistant.setup import async_setup_component
 
 from custom_components.virtual_device.const import (
     CONF_ENTITIES,
+    CONF_EXTRA_SOURCES,
     CONF_ID,
     CONF_NAME,
     CONF_PLATFORM,
@@ -42,10 +43,12 @@ async def _repairs(hass: HomeAssistant) -> None:
     assert await async_setup_component(hass, "repairs", {})
 
 
-async def start_fix(hass: HomeAssistant, entry, config_id: str = "status") -> FlowResult:
+async def start_fix(
+    hass: HomeAssistant, entry, config_id: str = "status", source: str = OLD
+) -> FlowResult:
     subentry_id = subentry_by_title(entry, "Heat pump").subentry_id
     return await repairs_flow_manager(hass).async_init(
-        DOMAIN, context={"issue_id": issue_id((subentry_id, config_id))}
+        DOMAIN, context={"issue_id": issue_id((subentry_id, config_id), source)}
     )
 
 
@@ -131,3 +134,27 @@ async def test_the_flow_aborts_when_the_entity_has_been_removed_meanwhile(
 
     assert result["type"] is FlowResultType.ABORT
     assert result["reason"] == "entity_not_found"
+
+
+async def test_a_missing_extra_source_is_replaced_and_only_its_issue_is_resolved(
+    hass: HomeAssistant, setup_device: SetupDevice
+) -> None:
+    gone = "sensor.gone_code"
+    entry = await setup_device([sensor("status", **{CONF_EXTRA_SOURCES: [gone, "sensor.keep"]})])
+    hass.states.async_set(NEW, "133")
+    result = await start_fix(hass, entry, source=gone)
+    assert result["description_placeholders"]["source"] == gone
+
+    result = await repairs_flow_manager(hass).async_configure(
+        result["flow_id"], {CONF_SOURCE_ENTITY: NEW}
+    )
+    await hass.async_block_till_done()
+
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    [stored] = saved_entities(entry)
+    assert stored[CONF_SOURCE_ENTITY] == OLD
+    assert stored[CONF_EXTRA_SOURCES] == [NEW, "sensor.keep"]
+    remaining = {
+        issue.translation_placeholders["source"] for issue in ir.async_get(hass).issues.values()
+    }
+    assert gone not in remaining

@@ -15,23 +15,24 @@ from homeassistant.helpers.event import (
 )
 from homeassistant.helpers.start import async_at_started
 
-from .const import CONF_NAME, CONF_SOURCE_ENTITY, DOMAIN
+from .const import CONF_NAME, DOMAIN
 from .definitions import entity_configs
-from .missing_sources import EntityKey, missing_sources
+from .missing_sources import EntityKey, MissingSource, all_sources, missing_sources
 from .source_exists import source_exists
 
 ISSUE_SOURCE_MISSING = "source_missing"
 ATTR_SUBENTRY_ID = "subentry_id"
 ATTR_CONFIG_ID = "config_id"
+ATTR_SOURCE = "source"
 
 
-def issue_id(key: EntityKey) -> str:
-    """The ID of the repair issue of one virtual entity."""
-    return f"{ISSUE_SOURCE_MISSING}_{key[0]}_{key[1]}"
+def issue_id(key: EntityKey, source: str) -> str:
+    """The ID of the repair issue of one missing source of one virtual entity."""
+    return f"{ISSUE_SOURCE_MISSING}_{key[0]}_{key[1]}_{source}"
 
 
 class SourceIssues:
-    """Raises a repair issue for every virtual entity whose source does not exist.
+    """Raises a repair issue for every source of a virtual entity that does not exist.
 
     A source exists if it has a state or a registry entry (a disabled entity has no state).
     Nothing is checked before Home Assistant has started, since other integrations may still be
@@ -42,7 +43,7 @@ class SourceIssues:
         self._hass = hass
         self._entry = entry
         self._started = False
-        self._raised: set[EntityKey] = set()
+        self._raised: set[MissingSource] = set()
         self._unsubscribe_start: Callable[[], None] | None = None
         self._unsubscribe_sources: list[Callable[[], None]] = []
 
@@ -58,8 +59,8 @@ class SourceIssues:
             self._unsubscribe_start()
         self._started = False
         self._unwatch()
-        for key in self._raised:
-            ir.async_delete_issue(self._hass, DOMAIN, issue_id(key))
+        for key, source in self._raised:
+            ir.async_delete_issue(self._hass, DOMAIN, issue_id(key, source))
         self._raised.clear()
 
     @callback
@@ -74,28 +75,28 @@ class SourceIssues:
             return
         configs = entity_configs(self._entry)
         missing = missing_sources(configs, partial(source_exists, self._hass))
-        for key in missing - self._raised:
-            self._raise(key, configs[key])
-        for key in self._raised - missing:
-            ir.async_delete_issue(self._hass, DOMAIN, issue_id(key))
+        for key, source in missing - self._raised:
+            self._raise(key, source, configs[key])
+        for key, source in self._raised - missing:
+            ir.async_delete_issue(self._hass, DOMAIN, issue_id(key, source))
         self._raised = missing
-        self._watch({c[CONF_SOURCE_ENTITY] for c in configs.values() if CONF_SOURCE_ENTITY in c})
+        self._watch({source for config in configs.values() for source in all_sources(config)})
 
-    def _raise(self, key: EntityKey, config: dict[str, Any]) -> None:
+    def _raise(self, key: EntityKey, source: str, config: dict[str, Any]) -> None:
         subentry = self._entry.subentries[key[0]]
         ir.async_create_issue(
             self._hass,
             DOMAIN,
-            issue_id(key),
+            issue_id(key, source),
             is_fixable=True,
             severity=ir.IssueSeverity.WARNING,
             translation_key=ISSUE_SOURCE_MISSING,
             translation_placeholders={
                 "device": subentry.title,
                 "entity": config[CONF_NAME],
-                "source": config[CONF_SOURCE_ENTITY],
+                "source": source,
             },
-            data={ATTR_SUBENTRY_ID: key[0], ATTR_CONFIG_ID: key[1]},
+            data={ATTR_SUBENTRY_ID: key[0], ATTR_CONFIG_ID: key[1], ATTR_SOURCE: source},
         )
 
     def _watch(self, sources: set[str]) -> None:
