@@ -22,6 +22,7 @@ Done
 - [x] Migration framework for stored data, release notes from `CHANGELOG.md`
 - [x] Test the templates in the source forms (preview with the current state of the source)
 - [x] Repair issue with a flow to choose a new source when the source entity is missing
+- [x] Extra sources: templates can read more entities, the entity follows all of them
 - [x] Released layouts are frozen in tests (`tests/released/`)
 - [x] Scheduled tests against the newest Home Assistant release and beta
 - [x] English translations

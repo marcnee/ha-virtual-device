@@ -90,8 +90,8 @@ requires it). Non-numeric values show as *unknown* and are logged. Leave those f
 
 ## Transforming values
 
-The optional template sees `value` (the source state, or the chosen attribute), `state` and
-`attributes`.
+The optional template sees `value` (the source state, or the chosen attribute), `state`,
+`attributes` and `sources` (the extra sources, see below).
 
 | Goal | Template |
 |---|---|
@@ -101,6 +101,23 @@ The optional template sees `value` (the source state, or the chosen attribute), 
 | Table lookup | `{{ {'18': 'In Betrieb', '19': 'Standby'}.get(value.split(' - ')[0], value) }}` |
 
 For two entities from one status, add two sensors with the same source and different templates.
+
+### Combining several entities
+
+Choose **Extra sources** in the source form to make a value from more than one entity. The
+template reads them in `sources`, by entity ID, and the virtual entity updates whenever the source
+or any extra source changes. Example: a sensor that joins the time and the text of the last error
+of a boiler (source: the time entity, extra source: the error code entity):
+
+```jinja
+{% set code = sources['sensor.boiler_error_code'].state %}
+{{ value }} - {{ code.split(' - ')[0] }} - {{ code.split(':', 1)[1] }}
+```
+
+gives `29.10.2026 11:14:00 - 133 - Safety time exceeded`. The extra sources are only read, never
+changed. An extra source that does not exist makes the template fail (the value is *unknown*,
+the failure is logged) and raises a repair issue, like a missing source. The entity is
+unavailable only when its source is.
 
 The form shows the current value of the source and what the templates make of it. Tick *Test the
 templates* and submit to see the result for what you just entered; the form stays open until you
@@ -175,8 +192,8 @@ fehlercode: "{{ attributes.error_code | int }}"
 status_text: "{{ value.split(' - ', 1)[-1] }}"
 ```
 
-The templates see `value` (state or chosen attribute), `state` and `attributes`, like the value
-template. Numbers stay numbers. A template overrides a copied attribute of the same name; one that
+The templates see `value` (state or chosen attribute), `state`, `attributes` and `sources`, like
+the value template. Numbers stay numbers. A template overrides a copied attribute of the same name; one that
 renders `none` or fails (it is logged) only leaves out its attribute. The reserved names above
 cannot be used.
 

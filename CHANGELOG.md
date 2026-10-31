@@ -7,6 +7,10 @@ Changes that need action from users go under `### Breaking` at the top of their 
 ## [Unreleased]
 
 ### Added
+- **Extra sources**: a virtual entity can follow more entities than its source. The templates read
+  them with `sources['sensor.x'].state`, and the entity updates when any of them changes, for
+  example to join a time and an error text from two sensors into one. They are only read. A missing
+  extra source raises a repair issue like a missing source; each missing source gets its own.
 - The forms for the source show the current value of the source and, with *Test the templates*,
   what the value template and the attribute templates make of it, including their errors,
   before anything is saved.

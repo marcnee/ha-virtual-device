@@ -13,6 +13,7 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 from custom_components.virtual_device.const import (
     CONF_COPY_ATTRIBUTES,
     CONF_ENTITIES,
+    CONF_EXTRA_SOURCES,
     CONF_ID,
     CONF_NAME,
     CONF_PLATFORM,
@@ -142,3 +143,35 @@ async def test_a_missing_source_and_its_repair_leave_everything_else_alone(
     assert hass.states.get("sensor.heat_pump_outside").state == "5"
     assert [key for key in ir.async_get(hass).issues if key[0] == DOMAIN] == []
     assert outside_view(hass) == before
+
+
+async def test_extra_sources_are_only_read_and_a_missing_one_is_repaired_in_the_entity(
+    hass: HomeAssistant, setup_device: SetupDevice
+) -> None:
+    for platform in PLATFORMS:
+        assert await async_setup_component(hass, platform, {})
+    assert await async_setup_component(hass, "repairs", {})
+    add_foreign_source(hass)
+    before = outside_view(hass)
+    gone = "sensor.gone"
+    config = virtual_sensor("outside", "Outside") | {
+        CONF_EXTRA_SOURCES: [SOURCE, gone],
+        "value_template": "{{ sources['sensor.outside_temperature'].state }}",
+    }
+
+    entry = await setup_device([config])
+    hass.states.async_set(SOURCE, "6", {"unit_of_measurement": "°C", "room": "Garden"})
+    await hass.async_block_till_done()
+    assert hass.states.get("sensor.heat_pump_outside").state == "6"
+    assert outside_view(hass) | {"source_state": None} == before | {"source_state": None}
+
+    manager = repairs_flow_manager(hass)
+    [(_, issue_id)] = [key for key in ir.async_get(hass).issues if key[0] == DOMAIN]
+    result = await manager.async_init(DOMAIN, context={"issue_id": issue_id})
+    await manager.async_configure(result["flow_id"], {CONF_SOURCE_ENTITY: SOURCE})
+    await hass.async_block_till_done()
+
+    subentry = next(iter(entry.subentries.values()))
+    assert subentry.data[CONF_ENTITIES][0][CONF_EXTRA_SOURCES] == [SOURCE]
+    assert [key for key in ir.async_get(hass).issues if key[0] == DOMAIN] == []
+    assert outside_view(hass) | {"source_state": None} == before | {"source_state": None}
