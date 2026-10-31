@@ -13,6 +13,7 @@ STRINGS = json.loads(EN_JSON.read_text())
 
 SOURCE_FIELDS = [
     "source_entity",
+    "extra_sources",
     "source_attribute",
     "value_template",
     "copy_attributes",
@@ -157,3 +158,11 @@ def test_the_source_forms_show_the_preview_of_the_templates(step: str) -> None:
     texts = DEVICE["step"][step]
     assert "{preview}" in texts["description"]
     assert texts["data_description"]["test_template"]
+
+
+@pytest.mark.parametrize("step", ["entity_source", "add_from_source"])
+def test_the_source_forms_explain_how_templates_read_the_extra_sources(step: str) -> None:
+    texts = DEVICE["step"][step]["data_description"]
+    assert "sources" in texts["extra_sources"]
+    assert "sources" in texts["value_template"]
+    assert "sources" in texts["attribute_templates"]

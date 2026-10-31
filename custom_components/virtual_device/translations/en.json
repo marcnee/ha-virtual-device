@@ -47,6 +47,7 @@
           "description": "The source entity is never modified. The template can use `value` (state or attribute), `state` and `attributes`.\n\nExamples:\n- `'{{' value.split(' - ', 1)[-1] '}}'` turns \"18 - Running\" into \"Running\"\n- `'{{' value.split(' - ')[0] '}}'` returns just \"18\"\n- `'{{' value.startswith('18') '}}'` for a binary sensor\n\n{preview}",
           "data": {
             "source_entity": "Source entity",
+            "extra_sources": "Extra sources",
             "source_attribute": "Source attribute",
             "value_template": "Value template",
             "copy_attributes": "Copy source attributes",
@@ -55,10 +56,11 @@
           },
           "data_description": {
             "source_entity": "An entity of any integration.",
+            "extra_sources": "Optional. More entities to read in the templates with `sources`, for example `'{{' sources['sensor.error_code'].state '}}'`. The virtual entity updates when any of them changes.",
             "source_attribute": "Optional. Use this attribute instead of the state.",
-            "value_template": "Optional. Transforms the value. Without it the value is used unchanged.",
+            "value_template": "Optional. Transforms the value. The template sees `value`, `state`, `attributes` and `sources` (the extra sources by entity ID). Without it the value is used unchanged.",
             "copy_attributes": "Optional. Default: none. \"Selected attributes\" lets you pick them in the next step. Attributes that Home Assistant sets itself (name, icon, unit, classes) are never copied.",
-            "attribute_templates": "Optional, YAML: attribute name and template per line, for example `fehlercode: \"'{{' attributes.error_code | int '}}'\"`. Templates see `value`, `state` and `attributes`. A template overrides a copied attribute of the same name.",
+            "attribute_templates": "Optional, YAML: attribute name and template per line, for example `fehlercode: \"'{{' attributes.error_code | int '}}'\"`. Templates see `value`, `state`, `attributes` and `sources`. A template overrides a copied attribute of the same name.",
             "test_template": "Shows a preview of what you entered, using the current state of the source, and keeps this form open. Submit again without it to continue."
           }
         },
@@ -104,6 +106,7 @@
           "description": "Pick the entity to build on. Type, name, unit, range and options are suggested from it afterwards, you can change them. The source entity is never modified.\n\nExamples:\n- `'{{' value.split(' - ', 1)[-1] '}}'` turns \"18 - Running\" into \"Running\"\n- `'{{' value.split(' - ')[0] '}}'` returns just \"18\"\n- `'{{' value.startswith('18') '}}'` for a binary sensor\n\n{preview}",
           "data": {
             "source_entity": "Source entity",
+            "extra_sources": "Extra sources",
             "source_attribute": "Source attribute",
             "value_template": "Value template",
             "copy_attributes": "Copy source attributes",
@@ -112,10 +115,11 @@
           },
           "data_description": {
             "source_entity": "An entity of any integration.",
+            "extra_sources": "Optional. More entities to read in the templates with `sources`, for example `'{{' sources['sensor.error_code'].state '}}'`. The virtual entity updates when any of them changes.",
             "source_attribute": "Optional. Use this attribute instead of the state.",
-            "value_template": "Optional. Transforms the value. Without it the value is used unchanged.",
+            "value_template": "Optional. Transforms the value. The template sees `value`, `state`, `attributes` and `sources` (the extra sources by entity ID). Without it the value is used unchanged.",
             "copy_attributes": "Optional. Default: none. \"Selected attributes\" lets you pick them in the next step. Attributes that Home Assistant sets itself (name, icon, unit, classes) are never copied.",
-            "attribute_templates": "Optional, YAML: attribute name and template per line, for example `fehlercode: \"'{{' attributes.error_code | int '}}'\"`. Templates see `value`, `state` and `attributes`. A template overrides a copied attribute of the same name.",
+            "attribute_templates": "Optional, YAML: attribute name and template per line, for example `fehlercode: \"'{{' attributes.error_code | int '}}'\"`. Templates see `value`, `state`, `attributes` and `sources`. A template overrides a copied attribute of the same name.",
             "test_template": "Shows a preview of what you entered, using the current state of the source, and keeps this form open. Submit again without it to continue."
           }
         },
