@@ -98,6 +98,7 @@ def test_the_source_form_requires_only_the_source_entity() -> None:
 
     assert set(fields(schema)) == {
         "source_entity",
+        "extra_sources",
         "source_attribute",
         "value_template",
         "copy_attributes",
@@ -109,6 +110,16 @@ def test_the_source_form_requires_only_the_source_entity() -> None:
     ]
     assert fields(schema)["source_entity"].description == {"suggested_value": "sensor.x"}
     assert fields(schema)["test_template"].default is vol.UNDEFINED  # never prefilled
+
+
+def test_the_extra_sources_are_chosen_from_all_entities_and_are_optional() -> None:
+    schema = source_schema({"extra_sources": ["sensor.a", "sensor.b"]})
+
+    assert selector(schema, "extra_sources").config["multiple"] is True
+    assert isinstance(fields(schema)["extra_sources"], vol.Optional)
+    assert fields(schema)["extra_sources"].description == {
+        "suggested_value": ["sensor.a", "sensor.b"]
+    }
 
 
 def test_the_attribute_choice_offers_the_attributes_of_the_source_and_free_input() -> None:

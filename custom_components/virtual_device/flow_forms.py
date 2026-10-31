@@ -10,6 +10,7 @@ from homeassistant.helpers.selector import (
     ActionSelector,
     BooleanSelector,
     EntitySelector,
+    EntitySelectorConfig,
     IconSelector,
     NumberSelector,
     NumberSelectorConfig,
@@ -34,6 +35,7 @@ from .const import (
     CONF_COPY_ATTRIBUTES,
     CONF_DEVICE_CLASS,
     CONF_DEVICE_NAME,
+    CONF_EXTRA_SOURCES,
     CONF_ICON,
     CONF_MANUFACTURER,
     CONF_MAX,
@@ -137,12 +139,15 @@ def basics_schema(draft: dict[str, Any]) -> vol.Schema:
 
 
 def source_schema(draft: dict[str, Any]) -> vol.Schema:
-    """Source entity or attribute, value template and the attributes to copy."""
+    """Source entity or attribute, extra sources, value template and the attributes to copy."""
     return vol.Schema(
         {
             vol.Required(
                 CONF_SOURCE_ENTITY, description=suggest(draft, CONF_SOURCE_ENTITY)
             ): EntitySelector(),
+            vol.Optional(
+                CONF_EXTRA_SOURCES, description=suggest(draft, CONF_EXTRA_SOURCES)
+            ): EntitySelector(EntitySelectorConfig(multiple=True)),
             vol.Optional(
                 CONF_SOURCE_ATTRIBUTE, description=suggest(draft, CONF_SOURCE_ATTRIBUTE)
             ): TextSelector(),

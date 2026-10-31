@@ -10,6 +10,7 @@ from homeassistant.exceptions import TemplateError
 
 from .const import (
     CONF_ATTRIBUTE_TEMPLATES,
+    CONF_EXTRA_SOURCES,
     CONF_SOURCE_ATTRIBUTE,
     CONF_SOURCE_ENTITY,
     CONF_VALUE_TEMPLATE,
@@ -58,18 +59,19 @@ def build_preview(hass: HomeAssistant, config: Mapping[str, Any], state: State |
     """
     if not config.get(CONF_SOURCE_ENTITY):
         return ""
+    extras = config.get(CONF_EXTRA_SOURCES, [])
     lines = []
     raw = None if state is None else raw_value(state, config.get(CONF_SOURCE_ATTRIBUTE))
     lines.append(f"{_VALUE}{_show(raw)}")
     if state is not None:
         if template := config.get(CONF_VALUE_TEMPLATE):
             try:
-                result = _show(ValueTransformer(hass, template, "").render(raw, state))
+                result = _show(ValueTransformer(hass, template, "", extras).render(raw, state))
             except TemplateError as err:
                 result = _show_error(err)
             lines.append(f"{_RESULT}{result}")
         if templates := _usable(config.get(CONF_ATTRIBUTE_TEMPLATES)):
-            rendered = AttributeTransformer(hass, templates, "").render(raw, state)
+            rendered = AttributeTransformer(hass, templates, "", extras).render(raw, state)
             results = ", ".join(
                 f"`{name}`: " + (_show_error(r) if isinstance(r, TemplateError) else _show(r))
                 for name, r in rendered.items()

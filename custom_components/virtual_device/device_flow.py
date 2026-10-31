@@ -27,6 +27,7 @@ from .const import (
     CONF_COPY_ATTRIBUTES,
     CONF_DEVICE_NAME,
     CONF_ENTITIES,
+    CONF_EXTRA_SOURCES,
     CONF_ICON,
     CONF_ID,
     CONF_MANUFACTURER,
@@ -55,6 +56,7 @@ from .template_preview import build_preview
 # Fields kept when the platform of an entity is changed while editing.
 _SOURCE_KEYS = (
     CONF_SOURCE_ENTITY,
+    CONF_EXTRA_SOURCES,
     CONF_SOURCE_ATTRIBUTE,
     CONF_VALUE_TEMPLATE,
     CONF_COPY_ATTRIBUTES,
