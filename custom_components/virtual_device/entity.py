@@ -24,6 +24,7 @@ from .const import (
     ATTR_SOURCE_ATTRIBUTE,
     ATTR_SOURCE_ENTITY,
     CONF_ATTRIBUTE_TEMPLATES,
+    CONF_EXTRA_SOURCES,
     CONF_ICON,
     CONF_ID,
     CONF_MANUFACTURER,
@@ -54,6 +55,7 @@ class VirtualEntity(Entity):
     def __init__(self, subentry: ConfigSubentry, config: dict[str, Any]) -> None:
         self._config = config
         self._source: str | None = config.get(CONF_SOURCE_ENTITY)
+        self._extra_sources: list[str] = config.get(CONF_EXTRA_SOURCES, [])
         self._attribute: str | None = config.get(CONF_SOURCE_ATTRIBUTE)
         self._transform: ValueTransformer | None = None
         self._attribute_transform: AttributeTransformer | None = None
@@ -86,14 +88,18 @@ class VirtualEntity(Entity):
     async def async_added_to_hass(self) -> None:
         """Prepare value transformation and actions, follow the source entity."""
         name = str(self._attr_name)
-        self._transform = ValueTransformer(self.hass, self._config.get(CONF_VALUE_TEMPLATE), name)
+        self._transform = ValueTransformer(
+            self.hass, self._config.get(CONF_VALUE_TEMPLATE), name, self._extra_sources
+        )
         self._attribute_transform = AttributeTransformer(
-            self.hass, self._config.get(CONF_ATTRIBUTE_TEMPLATES, {}), name
+            self.hass, self._config.get(CONF_ATTRIBUTE_TEMPLATES, {}), name, self._extra_sources
         )
         self._actions = self._build_actions(name)
         if self._source:
             self.async_on_remove(
-                async_track_state_change_event(self.hass, [self._source], self._handle_source_event)
+                async_track_state_change_event(
+                    self.hass, [self._source, *self._extra_sources], self._handle_source_event
+                )
             )
             self._refresh()
 
