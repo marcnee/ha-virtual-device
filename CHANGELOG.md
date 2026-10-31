@@ -6,6 +6,8 @@ Changes that need action from users go under `### Breaking` at the top of their 
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-10-31
+
 ### Added
 - **Extra sources**: a virtual entity can follow more entities than its source. The templates read
   them with `sources['sensor.x'].state`, and the entity updates when any of them changes, for
