@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from typing import Any
 
 from homeassistant.const import STATE_UNKNOWN
@@ -24,20 +24,39 @@ def raw_value(state: State, attribute: str | None) -> Any | None:
     return None if state.state == STATE_UNKNOWN else state.state
 
 
-def _variables(raw: Any, state: State) -> dict[str, Any]:
-    """What the templates can use."""
-    return {"value": raw, "state": state, "attributes": state.attributes}
+class _Variables:
+    """What the templates can use: the value, the source state, and the extra sources by ID."""
+
+    def __init__(self, hass: HomeAssistant, extra_sources: Sequence[str]) -> None:
+        self._hass = hass
+        self._extra_sources = tuple(extra_sources)
+
+    def __call__(self, raw: Any, state: State) -> dict[str, Any]:
+        """Read at render time; extra sources that do not exist are left out."""
+        sources = {
+            entity_id: extra
+            for entity_id in self._extra_sources
+            if (extra := self._hass.states.get(entity_id)) is not None
+        }
+        return {"value": raw, "state": state, "attributes": state.attributes, "sources": sources}
 
 
 class ValueTransformer:
     """Applies an optional Jinja template to a source value.
 
-    The template sees `value` (state or attribute), `state` and `attributes`.
+    The template sees `value` (state or attribute), `state`, `attributes` and `sources`.
     """
 
-    def __init__(self, hass: HomeAssistant, template: str | None, name: str) -> None:
+    def __init__(
+        self,
+        hass: HomeAssistant,
+        template: str | None,
+        name: str,
+        extra_sources: Sequence[str] = (),
+    ) -> None:
         self._template = Template(template, hass) if template else None
         self._name = name
+        self._variables = _Variables(hass, extra_sources)
 
     def render(self, raw: Any, state: State) -> Any | None:
         """The transformed value, or None if there is no value. A failing template raises."""
@@ -45,7 +64,7 @@ class ValueTransformer:
             return None
         if self._template is None:
             return raw
-        result = self._template.async_render(_variables(raw, state), parse_result=False)
+        result = self._template.async_render(self._variables(raw, state), parse_result=False)
         return None if result.strip().lower() in _NO_VALUE else result
 
     def __call__(self, raw: Any, state: State) -> Any | None:
@@ -60,13 +79,20 @@ class ValueTransformer:
 class AttributeTransformer:
     """Computes extra attributes from templates; same variables as the value template."""
 
-    def __init__(self, hass: HomeAssistant, templates: Mapping[str, str], name: str) -> None:
+    def __init__(
+        self,
+        hass: HomeAssistant,
+        templates: Mapping[str, str],
+        name: str,
+        extra_sources: Sequence[str] = (),
+    ) -> None:
         self._templates = {attr: Template(text, hass) for attr, text in templates.items()}
         self._name = name
+        self._variables = _Variables(hass, extra_sources)
 
     def render(self, raw: Any, state: State) -> dict[str, Any]:
         """The result of every template; for a failing one the TemplateError itself."""
-        variables = _variables(raw, state)
+        variables = self._variables(raw, state)
         rendered: dict[str, Any] = {}
         for attr, template in self._templates.items():
             try:
