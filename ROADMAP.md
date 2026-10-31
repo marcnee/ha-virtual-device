@@ -50,6 +50,13 @@ Next
   Possible order: mirror first for the simple clone case, assemble per type later.
 - [ ] German translation (the lines of the template preview are made in `template_preview.py`
       and need a way to be translated, e.g. a lookup of the translations at runtime)
+- [ ] Live preview of the templates while typing. Tried and not possible today: a form can set
+      `preview="virtual_device"` and answer a websocket command `virtual_device/start_preview`,
+      but the frontend (20260930.5) only subscribes for `config_flow` and `options_flow`, not for
+      `config_subentries_flow`, so the preview stays empty. Needs a change in the Home Assistant
+      frontend (generic preview for subentry flows) or a move of the device forms to an options
+      flow. The attempt is kept in the local branch `live-preview-attempt`; check again with
+      newer frontends.
 - [ ] Diagnostics
 
 Ideas, not decided
